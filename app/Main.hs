@@ -2,63 +2,110 @@
 {-# LANGUAGE PatternSynonyms #-}
 module Main where
 
-import Raylib.Core (clearBackground, initWindow, setTargetFPS, windowShouldClose, closeWindow, getMousePosition)
+import Raylib.Core (clearBackground, initWindow, setTargetFPS, windowShouldClose, closeWindow, getMousePosition, isKeyDown)
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Shapes (drawRectangle, drawLine, drawLineV, drawCircle)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
-import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance)
-import Raylib.Util.Colors (lightGray, rayWhite, red, black)
-import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y)
+import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vectorNormalize, vector2Rotate, vectorDistance)
+import Raylib.Util.Colors (lightGray, rayWhite, red, black, blue)
+import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, KeyboardKey(KeyM), Color (Color))
+
+import Control.Exception (evaluate)
 
 width :: Int 
-width  = 1000
+width  = 1600
 height :: Int
-height = 1000
+height = 900
 
 cellSize :: Int
-cellSize = 100
+cellSize = 30
 
 cols :: Int
-cols = div width cellSize
+cols = 15
 rows :: Int
-rows = div height cellSize
+rows = 20
 
-scene = [ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [0, 0, 0, 1, 1, 1, 1, 1, 1, 0],
-          [0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
-          [0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
-          [0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
-          [0, 0, 1, 1, 0, 0, 1, 1, 1, 0],
-          [0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-          [0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-          [0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+fov :: Float
+fov = 1
 
-circle1 = (Vector2 ((*0.43) $ fromIntegral cols) ((*0.33) $ fromIntegral rows) )
+scene = [ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+          [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+          [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+          [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+          [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1],
+          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+
+playerPosition = (Vector2 ((*0.33) $ fromIntegral cols) ((*0.53) $ fromIntegral rows) )
 
 startup :: IO WindowResources
 startup = do
   window <- initWindow width height "hoom"
-  setTargetFPS 60
   return window
 
 mainLoop :: WindowResources -> IO WindowResources
 mainLoop window =
   drawing
     ( do
+        isMDown <- isKeyDown KeyM
+        --setTargetFPS 60
+        if isMDown then drawMap else drawScene 
+        -- drawText "Basic raylib window" 30 40 30 lightGray
+    ) >> return window
+
+drawScene :: IO ()
+drawScene = do
+        clearBackground blue
+        mousePos <- getMousePosition
+        let mousePosN = (vector2'x mousePos)/(fromIntegral width)
+        let angle = 2*pi*(mousePosN)
+        let playerFront = playerPosition |+| (vector2Rotate (Vector2 0.1 0.1) angle)
+        drawBars playerPosition playerFront 0
+        return ()
+
+drawBars :: Vector2 -> Vector2 -> Int -> IO ()
+drawBars origin ray screenX
+  | screenX <= width = do
+                    drawRectangle screenX (floor $ ((fromIntegral height) - (heightR))/2 ) deltaRes (floor heightR) color
+                    -- strokeLine origin wall
+                    drawBars origin ray (screenX + deltaRes)
+  | otherwise = return ()
+  where heightR = (1/distance)*(fromIntegral height)
+        color = Color c c (c-30) 255
+        c = (floor (100 + (150/distance) ) )
+        distance = (cos angle) * (vectorDistance origin wall)
+        wall = rayStep origin angledRay
+        angledRay = origin |+| vector2Rotate (ray|-|origin) angle
+        angle = (fov)*((fromIntegral screenX)/(fromIntegral width) - 0.5)
+        deltaRes = 5
+  
+
+drawMap :: IO ()
+drawMap = do
         clearBackground black
         drawGrid 
         drawCells scene 0
         mousePos <- getMousePosition
         let mousePosN = mousePos |/ fromIntegral cellSize
-        rayStep circle1 mousePosN
-        strokeLine circle1 mousePosN 
+        let wall = rayStep playerPosition mousePosN
+        strokeLine playerPosition wall 
         drawCircleOnGrid mousePosN
-        drawCircleOnGrid circle1
-        -- drawText "Basic raylib window" 30 40 30 lightGray
-    ) >> return window
-
-drawGrid :: IO ()
+        drawCircleOnGrid playerPosition
+        drawCircleOnGrid wall
+        drawGrid :: IO ()
 drawGrid = do
             drawRows 0
             drawCols 0
@@ -89,8 +136,7 @@ drawCols w
     | w < width = (do 
                 drawLine w 0 w height lightGray
                 drawCols ( w + (cellSize) )
-              )
-    | otherwise = return ()
+              ) | otherwise = return ()
 
 drawCircleOnGrid :: Vector2 -> IO ()
 drawCircleOnGrid pos = drawCircle x y r red
@@ -103,13 +149,13 @@ strokeLine :: Vector2 -> Vector2 -> IO ()
 strokeLine posS posE = drawLineV (posS|*s) (posE|*s) red
     where s = fromIntegral(cellSize)
 
-rayStep :: Vector2 -> Vector2 -> IO Vector2
+rayStep :: Vector2 -> Vector2 -> Vector2
 rayStep a b 
-    | (vector2'x b) > fromIntegral(width)  = pure b
-    | (vector2'y b) > fromIntegral(height) = pure b
-    | (vector2'x b) < 0.0 = pure 0.0
-    | (vector2'y b) < 0.0 = pure 0.0
-    | wallID /= 0 = pure b
+    | (vector2'x b) > fromIntegral(width)  = b
+    | (vector2'y b) > fromIntegral(height) = b
+    | (vector2'x b) < 0.0 = 0.0
+    | (vector2'y b) < 0.0 = 0.0
+    | wallID /= 0 = b
     | dx /= 0 = let k = dy/dx
                     c = (vector2'y a) - k*(vector2'x a)
                     x = snap (vector2'x b) dx
@@ -117,13 +163,8 @@ rayStep a b
                     nextRay1 = (Vector2 x (k*x + c))
                     nextRay2 = if k/=0 then (Vector2 ((y-c)/k) y) else (Vector2 0.0 0.0)
                     closest = if (vectorDistance nextRay1 b) > (vectorDistance nextRay2 b) then nextRay2 else nextRay1
-                in (do 
-                drawCircleOnGrid closest
-                strokeLine b closest
-                (rayStep b closest) >>= return
-                )
-
-    | otherwise = drawCircleOnGrid b >> return (Vector2 0.0 0.0)
+                    in rayStep b closest
+    | otherwise = (Vector2 0.0 0.0)
     where dv = b |-| a
           dx = vector2'x dv
           dy = vector2'y dv
@@ -158,4 +199,4 @@ shouldClose _ = windowShouldClose
 teardown :: WindowResources -> IO ()
 teardown = closeWindow . Just
 
-$(raylibApplication 'startup 'mainLoop 'shouldClose 'teardown)
+$(raylibApplication 'startup 'mainLoop 'shouldClose 'teardown)  
