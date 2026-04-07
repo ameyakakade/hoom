@@ -2,108 +2,132 @@
 {-# LANGUAGE PatternSynonyms #-}
 module Main where
 
-import Raylib.Core (clearBackground, initWindow, setTargetFPS, windowShouldClose, closeWindow, getMousePosition, isKeyDown)
+import Raylib.Core (clearBackground, initWindow, setTargetFPS, getFPS, windowShouldClose, closeWindow, getMouseDelta, getMousePosition, isKeyDown, disableCursor)
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Shapes (drawRectangle, drawLine, drawLineV, drawCircle)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
 import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vectorNormalize, vector2Rotate, vectorDistance)
 import Raylib.Util.Colors (lightGray, rayWhite, red, black, blue)
-import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, KeyboardKey(KeyM), Color (Color))
-
-import Control.Exception (evaluate)
+import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, KeyboardKey(KeyM)
+                    ,KeyboardKey(KeyW), KeyboardKey(KeyA), KeyboardKey(KeyS), KeyboardKey(KeyD), Color (Color))
 
 width :: Int 
-width  = 1600
+width  = 1920
 height :: Int
-height = 900
+height = 1080
 
 cellSize :: Int
 cellSize = 30
 
 cols :: Int
-cols = 15
+cols = 20
 rows :: Int
 rows = 20
 
 fov :: Float
-fov = 1
+fov = 0.8
 
-scene = [ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-          [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-          [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-          [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
-          [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1],
-          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+scene = [ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+          [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
+          [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
+          [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1],
+          [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1],
+          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
 
 playerPosition = (Vector2 ((*0.33) $ fromIntegral cols) ((*0.53) $ fromIntegral rows) )
 
-startup :: IO WindowResources
-startup = do
-  window <- initWindow width height "hoom"
-  return window
+type AppState = (Vector2, Float, WindowResources)
+  
+playerAngle = 0
 
-mainLoop :: WindowResources -> IO WindowResources
-mainLoop window =
+startup :: IO AppState 
+startup = do 
+  window <- initWindow width height "hoom"
+  disableCursor
+  return (playerPosition, playerAngle, window)
+
+speedPerFrame = 0.003
+
+mainLoop :: AppState -> IO AppState
+mainLoop (positionOld, angleOld, window) =
   drawing
     ( do
         isMDown <- isKeyDown KeyM
-        --setTargetFPS 60
-        if isMDown then drawMap else drawScene 
-        -- drawText "Basic raylib window" 30 40 30 lightGray
-    ) >> return window
+        isWDown <- isKeyDown KeyW
+        isADown <- isKeyDown KeyA
+        isSDown <- isKeyDown KeyS
+        isDDown <- isKeyDown KeyD
+        let xOffset1 = if isWDown then speedPerFrame else 0
+        let yOffset1 = if isADown then -speedPerFrame else 0
+        let xOffset2 = if isSDown then -speedPerFrame else 0
+        let yOffset2 = if isDDown then speedPerFrame else 0
 
-drawScene :: IO ()
-drawScene = do
+        mouse <- fmap vector2'x getMouseDelta 
+        let angle = angleOld + mouse*0.003
+        
+        let positionDelta = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) (angle + (pi/4))
+        let position = positionOld |+| positionDelta
+
+        --setTargetFPS 60
+        if isMDown then drawMap position else drawScene position angle
+
+        fps <- getFPS
+        drawText ("FPS: " ++ (show fps)) 30 40 30 red
+
+        return (position, angle, window)
+    )
+
+drawScene :: Vector2 -> Float -> IO ()
+drawScene position angle = do
         clearBackground blue
         mousePos <- getMousePosition
         let mousePosN = (vector2'x mousePos)/(fromIntegral width)
-        let angle = 2*pi*(mousePosN)
-        let playerFront = playerPosition |+| (vector2Rotate (Vector2 0.1 0.1) angle)
-        drawBars playerPosition playerFront 0
+        let playerFront = position |+| (vector2Rotate (Vector2 0.001 0.001) angle)
+        drawBars position playerFront 0
         return ()
 
 drawBars :: Vector2 -> Vector2 -> Int -> IO ()
 drawBars origin ray screenX
   | screenX <= width = do
                     drawRectangle screenX (floor $ ((fromIntegral height) - (heightR))/2 ) deltaRes (floor heightR) color
-                    -- strokeLine origin wall
+                    --strokeLine origin wall
                     drawBars origin ray (screenX + deltaRes)
   | otherwise = return ()
-  where heightR = (1/distance)*(fromIntegral height)
+  where heightR = 1.5*(1/distance)*(fromIntegral height)
         color = Color c c (c-30) 255
-        c = (floor (100 + (150/distance) ) )
+        c = (floor (100 + (min (150/distance) 150) ) )
         distance = (cos angle) * (vectorDistance origin wall)
         wall = rayStep origin angledRay
         angledRay = origin |+| vector2Rotate (ray|-|origin) angle
         angle = (fov)*((fromIntegral screenX)/(fromIntegral width) - 0.5)
-        deltaRes = 5
+        deltaRes = 1
   
 
-drawMap :: IO ()
-drawMap = do
+drawMap :: Vector2 -> IO ()
+drawMap position = do
         clearBackground black
         drawGrid 
         drawCells scene 0
         mousePos <- getMousePosition
         let mousePosN = mousePos |/ fromIntegral cellSize
-        let wall = rayStep playerPosition mousePosN
-        strokeLine playerPosition wall 
+        let wall = rayStep position mousePosN
+        strokeLine position wall 
         drawCircleOnGrid mousePosN
-        drawCircleOnGrid playerPosition
+        drawCircleOnGrid position
         drawCircleOnGrid wall
         drawGrid :: IO ()
 drawGrid = do
@@ -193,10 +217,10 @@ getWallID y x
     | otherwise = (scene !! y) !! x 
 
 
-shouldClose :: WindowResources -> IO Bool
+shouldClose :: AppState -> IO Bool
 shouldClose _ = windowShouldClose
 
-teardown :: WindowResources -> IO ()
-teardown = closeWindow . Just
+teardown :: AppState -> IO ()
+teardown (_, _, win)= closeWindow . Just $ win
 
 $(raylibApplication 'startup 'mainLoop 'shouldClose 'teardown)  
