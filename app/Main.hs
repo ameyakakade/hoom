@@ -1,17 +1,26 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE PatternSynonyms #-}
+
 module Main where
 
-import Raylib.Core (clearBackground, initWindow, setTargetFPS, getFPS, windowShouldClose, closeWindow, getMouseDelta, getMousePosition, isKeyDown, disableCursor, getFrameTime)
+import Raylib.Core (clearBackground, initWindow, setTargetFPS
+                   ,getFPS, windowShouldClose, closeWindow
+                   ,getMouseDelta, getMousePosition, isKeyDown
+                   ,disableCursor, getFrameTime)
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Shapes (drawRectangle, drawLine, drawLineV, drawCircle)
 import Raylib.Core.Textures (loadTexture, drawTexturePro)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
 import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate)
 import Raylib.Util.Colors (lightGray, rayWhite, red, black, blue)
-import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, KeyboardKey(KeyM)
-                    ,KeyboardKey(KeyW), KeyboardKey(KeyA), KeyboardKey(KeyS), KeyboardKey(KeyD), Color (Color)
+import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
+                    ,KeyboardKey(KeyM), KeyboardKey(KeyW), KeyboardKey(KeyA)
+                    ,KeyboardKey(KeyS), KeyboardKey(KeyD), Color (Color)
                     ,Texture, Rectangle, pattern Rectangle)
+
+type Textures = [Texture]
+type State = (Vector2, Vector2, Float, Textures)
+type AppState = (State, WindowResources)
 
 width :: Int 
 width  = 800
@@ -22,49 +31,46 @@ cellSize :: Int
 cellSize = 30
 
 cols :: Int
-cols = 20
+cols = 30
 rows :: Int
-rows = 20
+rows = 40
 
 fov :: Float
 fov = 0.8
 
-scene = [ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-          [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-          [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-          [1, 0, 0, 1, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 1, 1, 1, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 4, 4, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 3, 1, 0, 0, 0, 1, 1, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 1],
-          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+textureSize :: Float
+textureSize = 256
 
-playerPosition = (Vector2 ((*0.33) $ fromIntegral cols) ((*0.53) $ fromIntegral rows) )
+scene :: [[Int]]
+scene = [ [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0,3,0,0,4,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,2,0,3,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,2,0,3,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+          [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ]
 
-type Textures = [Texture]
-
-type State = (Vector2, Vector2, Float, Textures)
-
-type AppState = (State, WindowResources)
-
+playerPosition = (Vector2 2.0 2.0)
 playerAngle = 0
 
 startup :: IO AppState 
 startup = do 
   window <- initWindow width height "hoom"
-  let texturePaths = ["wall1.png", "wall2.png", "wall3.png", "wall4.png", "dummy.png"]
+  let texturePaths = ["dummy.png", "wall1.png", "wall2.png", "wall3.png", "wall4.png"]
   loadedTextures <- sequence $ map loadTexture texturePaths
   disableCursor
-  return ( (playerPosition, Vector2 0 0, playerAngle, loadedTextures) , window)
+  return ( (playerPosition, Vector2 1 1, playerAngle, loadedTextures) , window)
 
 acceleration = 0.04 -- in blocks per sec
 deceleration = 0.006 -- in blocks per sec
@@ -98,7 +104,6 @@ mainLoop (state, window) =
         let velocity | mag > maxSpeed = ((vectorNormalize velocityA) |* maxSpeed)
                      | otherwise = velocityA
 
-
         let position = positionOld |+| (velocity |* time)
 
      -- setTargetFPS 60
@@ -124,16 +129,13 @@ drawBars origin ray screenX textures
   | screenX <= width = do
                  -- drawRectangle screenX (floor $ ((fromIntegral height) - (heightR))/2 ) deltaRes (floor heightR) color
                  -- strokeLine origin wall
-                    drawTexturePro (textures !! (0)) (Rectangle (interp*128) 0 1 128) rect (Vector2 0.0 0.0) 0.0 color
+                    drawTexturePro (textures !! (wallID)) (Rectangle (interp*textureSize) 0 1 textureSize) rect (Vector2 0.0 0.0) 0.0 color
                     drawBars origin ray (screenX + deltaRes) textures 
   | otherwise = return ()
   where heightR = 1.5*(1/distance)*(fromIntegral height)
         color 
-          | wallID == 1 = Color c c c ((div c 3)+170)
-          | wallID == 2 = Color (c-30) (c-30) c 255
-          | wallID == 3 = Color (c-100) c (c-100) 255
-          | wallID == 4 = Color c c 2 255
-          | otherwise = Color 255 0 0 255
+          | wallID == 0 = Color 255 0 0 255
+          | otherwise = Color c c c ((div c 3)+170)
         c = (floor (100 + (min (150/distance) 150) ) )
         rect = Rectangle (fromIntegral screenX) ( ((fromIntegral height) - (heightR))/2 ) (fromIntegral deltaRes) heightR
         distance = (cos angle) * (vectorDistance origin wall)
@@ -217,7 +219,7 @@ rayStep a b
                     nextRay2 = if k/=0 then (Vector2 ((y-c)/k) y) else (Vector2 0.0 0.0)
                     closest = if (vectorDistance nextRay1 b) > (vectorDistance nextRay2 b) then nextRay2 else nextRay1
                     in rayStep b closest
-    | otherwise = ((Vector2 0.0 0.0), 9)
+    | otherwise = ((Vector2 0.0 0.0), 0)
     where dv = b |-| a
           dx = vector2'x dv
           dy = vector2'y dv
