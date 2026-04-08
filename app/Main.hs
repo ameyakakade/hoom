@@ -2,17 +2,19 @@
 {-# LANGUAGE PatternSynonyms #-}
 module Main where
 
-import Raylib.Core (clearBackground, initWindow, setTargetFPS, getFPS, windowShouldClose, closeWindow, getMouseDelta, getMousePosition, isKeyDown, disableCursor)
+import Raylib.Core (clearBackground, initWindow, setTargetFPS, getFPS, windowShouldClose, closeWindow, getMouseDelta, getMousePosition, isKeyDown, disableCursor, getFrameTime)
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Shapes (drawRectangle, drawLine, drawLineV, drawCircle)
+import Raylib.Core.Textures (loadTexture, drawTexturePro)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
-import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vectorNormalize, vector2Rotate, vectorDistance)
+import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate)
 import Raylib.Util.Colors (lightGray, rayWhite, red, black, blue)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, KeyboardKey(KeyM)
-                    ,KeyboardKey(KeyW), KeyboardKey(KeyA), KeyboardKey(KeyS), KeyboardKey(KeyD), Color (Color))
+                    ,KeyboardKey(KeyW), KeyboardKey(KeyA), KeyboardKey(KeyS), KeyboardKey(KeyD), Color (Color)
+                    ,Texture)
 
 width :: Int 
-width  = 1920
+width  = 1440
 height :: Int
 height = 1080
 
@@ -31,87 +33,108 @@ scene = [ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
           [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
           [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
           [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-          [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 1, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 1, 1, 1, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
           [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
           [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 4, 4, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
           [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1],
-          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1],
-          [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1],
+          [1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 3, 1, 0, 0, 0, 1, 1, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 1],
           [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
 
 playerPosition = (Vector2 ((*0.33) $ fromIntegral cols) ((*0.53) $ fromIntegral rows) )
 
-type AppState = (Vector2, Float, WindowResources)
-  
+type Textures = [Texture]
+
+type State = (Vector2, Vector2, Float, Textures)
+
+type AppState = (State, WindowResources)
+
 playerAngle = 0
 
 startup :: IO AppState 
 startup = do 
   window <- initWindow width height "hoom"
+  let loadedTextures = []
   disableCursor
-  return (playerPosition, playerAngle, window)
+  return ( (playerPosition, Vector2 0 0, playerAngle, loadedTextures) , window)
 
-speedPerFrame = 0.003
+acceleration = 0.04 -- in blocks per sec
+deceleration = 0.006 -- in blocks per sec
+maxSpeed = 4.0 -- in blocks per sec
+
+boolToNum :: (Num a) => Bool -> a
+boolToNum b = if b then 1 else 0
 
 mainLoop :: AppState -> IO AppState
-mainLoop (positionOld, angleOld, window) =
+mainLoop (state, window) =
   drawing
     ( do
+        let (positionOld, velocityOld, angleOld, textures) = state
         isMDown <- isKeyDown KeyM
-        isWDown <- isKeyDown KeyW
-        isADown <- isKeyDown KeyA
-        isSDown <- isKeyDown KeyS
-        isDDown <- isKeyDown KeyD
-        let xOffset1 = if isWDown then speedPerFrame else 0
-        let yOffset1 = if isADown then -speedPerFrame else 0
-        let xOffset2 = if isSDown then -speedPerFrame else 0
-        let yOffset2 = if isDDown then speedPerFrame else 0
 
+        xOffset1 <- fmap boolToNum (isKeyDown KeyW)
+        yOffset1 <- fmap ((*(-1)).boolToNum) (isKeyDown KeyA)
+        xOffset2 <- fmap ((*(-1)).boolToNum) (isKeyDown KeyS)
+        yOffset2 <- fmap boolToNum (isKeyDown KeyD)
+
+        time <- getFrameTime
+      
         mouse <- fmap vector2'x getMouseDelta 
         let angle = angleOld + mouse*0.003
-        
-        let positionDelta = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) (angle + (pi/4))
-        let position = positionOld |+| positionDelta
 
-        --setTargetFPS 60
-        if isMDown then drawMap position else drawScene position angle
+        -- add acceleration and deceleration
+        let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) (angle + (pi/4))
+        let velocityDelta = ((vectorNormalize velocityDir) |* acceleration) |-| (velocityOld |* deceleration )
+        let velocityA = velocityOld + velocityDelta
+        let mag = magnitude velocityA
+        let velocity | mag > maxSpeed = ((vectorNormalize velocityA) |* maxSpeed)
+                     | otherwise = velocityA
+
+
+        let position = positionOld |+| (velocity |* time)
+
+    --  setTargetFPS 60
+        if isMDown then drawMap position else drawScene position angle textures
 
         fps <- getFPS
         drawText ("FPS: " ++ (show fps)) 30 40 30 red
 
-        return (position, angle, window)
+        return ( (position, velocity, angle, textures), window)
     )
 
-drawScene :: Vector2 -> Float -> IO ()
-drawScene position angle = do
+drawScene :: Vector2 -> Float -> Textures -> IO ()
+drawScene position angle textures = do
         clearBackground blue
         mousePos <- getMousePosition
         let mousePosN = (vector2'x mousePos)/(fromIntegral width)
         let playerFront = position |+| (vector2Rotate (Vector2 0.001 0.001) angle)
-        drawBars position playerFront 0
+        drawBars position playerFront 0 textures
         return ()
 
-drawBars :: Vector2 -> Vector2 -> Int -> IO ()
-drawBars origin ray screenX
+drawBars :: Vector2 -> Vector2 -> Int -> Textures -> IO ()
+drawBars origin ray screenX textures
   | screenX <= width = do
                     drawRectangle screenX (floor $ ((fromIntegral height) - (heightR))/2 ) deltaRes (floor heightR) color
-                    --strokeLine origin wall
-                    drawBars origin ray (screenX + deltaRes)
+                 -- strokeLine origin wall
+                    drawBars origin ray (screenX + deltaRes) textures 
   | otherwise = return ()
   where heightR = 1.5*(1/distance)*(fromIntegral height)
-        color = Color c c (c-30) 255
+        color 
+          | wallID == 1 = Color c c (c-30) 255
+          | wallID == 2 = Color (c-30) (c-30) c 255
+          | wallID == 3 = Color (c-100) c (c-100) 255
+          | wallID == 4 = Color c c 2 255
+          | otherwise = Color 255 0 0 255
         c = (floor (100 + (min (150/distance) 150) ) )
         distance = (cos angle) * (vectorDistance origin wall)
-        wall = rayStep origin angledRay
+        (wall, wallID) = rayStep origin angledRay
         angledRay = origin |+| vector2Rotate (ray|-|origin) angle
         angle = (fov)*((fromIntegral screenX)/(fromIntegral width) - 0.5)
         deltaRes = 1
@@ -124,7 +147,7 @@ drawMap position = do
         drawCells scene 0
         mousePos <- getMousePosition
         let mousePosN = mousePos |/ fromIntegral cellSize
-        let wall = rayStep position mousePosN
+        let (wall, wallID) = rayStep position mousePosN
         strokeLine position wall 
         drawCircleOnGrid mousePosN
         drawCircleOnGrid position
@@ -173,13 +196,13 @@ strokeLine :: Vector2 -> Vector2 -> IO ()
 strokeLine posS posE = drawLineV (posS|*s) (posE|*s) red
     where s = fromIntegral(cellSize)
 
-rayStep :: Vector2 -> Vector2 -> Vector2
+rayStep :: Vector2 -> Vector2 -> (Vector2, Int)
 rayStep a b 
-    | (vector2'x b) > fromIntegral(width)  = b
-    | (vector2'y b) > fromIntegral(height) = b
-    | (vector2'x b) < 0.0 = 0.0
-    | (vector2'y b) < 0.0 = 0.0
-    | wallID /= 0 = b
+    | (vector2'x b) > fromIntegral(width)  = (b, 0)
+    | (vector2'y b) > fromIntegral(height) = (b, 0)
+    | (vector2'x b) < 0.0 = (0.0, 0)
+    | (vector2'y b) < 0.0 = (0.0, 0)
+    | wallID /= 0 = (b, wallID)
     | dx /= 0 = let k = dy/dx
                     c = (vector2'y a) - k*(vector2'x a)
                     x = snap (vector2'x b) dx
@@ -188,7 +211,7 @@ rayStep a b
                     nextRay2 = if k/=0 then (Vector2 ((y-c)/k) y) else (Vector2 0.0 0.0)
                     closest = if (vectorDistance nextRay1 b) > (vectorDistance nextRay2 b) then nextRay2 else nextRay1
                     in rayStep b closest
-    | otherwise = (Vector2 0.0 0.0)
+    | otherwise = ((Vector2 0.0 0.0), 9)
     where dv = b |-| a
           dx = vector2'x dv
           dy = vector2'y dv
@@ -221,6 +244,6 @@ shouldClose :: AppState -> IO Bool
 shouldClose _ = windowShouldClose
 
 teardown :: AppState -> IO ()
-teardown (_, _, win)= closeWindow . Just $ win
+teardown (_, win)= closeWindow . Just $ win
 
 $(raylibApplication 'startup 'mainLoop 'shouldClose 'teardown)  
