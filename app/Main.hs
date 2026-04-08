@@ -23,17 +23,13 @@ type State = (Vector2, Vector2, Float, Textures)
 type AppState = (State, WindowResources)
 
 width :: Int 
-width  = 800
+width  = 1440
 height :: Int
-height = 600
+height = 1080
 
 cellSize :: Int
 cellSize = 30
 
-cols :: Int
-cols = 30
-rows :: Int
-rows = 40
 
 fov :: Float
 fov = 0.8
@@ -61,13 +57,18 @@ scene = [ [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
           [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
           [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ]
 
+cols :: Int
+cols = length scene
+rows :: Int
+rows = length $ head scene
+
 playerPosition = (Vector2 2.0 2.0)
 playerAngle = 0
 
 startup :: IO AppState 
 startup = do 
   window <- initWindow width height "hoom"
-  let texturePaths = ["dummy.png", "wall1.png", "wall2.png", "wall3.png", "wall4.png"]
+  let texturePaths = ["dummy.png", "wall1.png", "wall2.png", "wall3.png", "wall4.png", "error.png"]
   loadedTextures <- sequence $ map loadTexture texturePaths
   disableCursor
   return ( (playerPosition, Vector2 1 1, playerAngle, loadedTextures) , window)
@@ -96,10 +97,12 @@ mainLoop (state, window) =
         mouse <- fmap vector2'x getMouseDelta 
         let angle = angleOld + mouse*0.003
 
+        let velocityCollision = getVelocityCollision positionOld
+
         -- add acceleration and deceleration
-        let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) (angle + (pi/4))
+        let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) (angle+pi/4)
         let velocityDelta = ((vectorNormalize velocityDir) |* acceleration) |-| (velocityOld |* deceleration )
-        let velocityA = velocityOld + velocityDelta
+        let velocityA = velocityOld + velocityDelta + velocityCollision
         let mag = magnitude velocityA
         let velocity | mag > maxSpeed = ((vectorNormalize velocityA) |* maxSpeed)
                      | otherwise = velocityA
@@ -134,9 +137,9 @@ drawBars origin ray screenX textures
   | otherwise = return ()
   where heightR = 1.5*(1/distance)*(fromIntegral height)
         color 
-          | wallID == 0 = Color 255 0 0 255
-          | otherwise = Color c c c ((div c 3)+170)
-        c = (floor (100 + (min (150/distance) 150) ) )
+          | wallID == 5 = Color 255 0 0 255
+          | otherwise = Color 255 255 255 (c)
+        c = floor $ min ( ((10/distance)^2)*255 ) 255 
         rect = Rectangle (fromIntegral screenX) ( ((fromIntegral height) - (heightR))/2 ) (fromIntegral deltaRes) heightR
         distance = (cos angle) * (vectorDistance origin wall)
         interp = max x y
@@ -204,8 +207,11 @@ strokeLine :: Vector2 -> Vector2 -> IO ()
 strokeLine posS posE = drawLineV (posS|*s) (posE|*s) red
     where s = fromIntegral(cellSize)
 
-rayStep :: Vector2 -> Vector2 -> (Vector2, Int)
-rayStep a b 
+rayStep = rayStepA 0
+
+rayStepA :: Int -> Vector2 -> Vector2 -> (Vector2, Int)
+rayStepA count a b 
+    | count > 50 = (b, 5)
     | (vector2'x b) > fromIntegral(width)  = (b, 0)
     | (vector2'y b) > fromIntegral(height) = (b, 0)
     | (vector2'x b) < 0.0 = (0.0, 0)
@@ -218,7 +224,7 @@ rayStep a b
                     nextRay1 = (Vector2 x (k*x + c))
                     nextRay2 = if k/=0 then (Vector2 ((y-c)/k) y) else (Vector2 0.0 0.0)
                     closest = if (vectorDistance nextRay1 b) > (vectorDistance nextRay2 b) then nextRay2 else nextRay1
-                    in rayStep b closest
+                    in rayStepA (count+1) b closest
     | otherwise = ((Vector2 0.0 0.0), 0)
     where dv = b |-| a
           dx = vector2'x dv
@@ -244,7 +250,7 @@ hittingWall a b = getWallID cx cy
 
 getWallID :: Int -> Int -> Int
 getWallID y x 
-    | y >= rows || x >= cols = 0
+    | y >= cols || x >= rows = 0
     | otherwise = (scene !! y) !! x 
 
 
@@ -253,5 +259,8 @@ shouldClose _ = windowShouldClose
 
 teardown :: AppState -> IO ()
 teardown (_, win)= closeWindow . Just $ win
+
+getVelocityCollision :: Vector2 -> Vector2
+getVelocityCollision position = Vector2 0.00 0.00
 
 $(raylibApplication 'startup 'mainLoop 'shouldClose 'teardown)  
