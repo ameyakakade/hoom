@@ -11,12 +11,12 @@ import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rota
 import Raylib.Util.Colors (lightGray, rayWhite, red, black, blue)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, KeyboardKey(KeyM)
                     ,KeyboardKey(KeyW), KeyboardKey(KeyA), KeyboardKey(KeyS), KeyboardKey(KeyD), Color (Color)
-                    ,Texture)
+                    ,Texture, Rectangle, pattern Rectangle)
 
 width :: Int 
-width  = 1440
+width  = 800
 height :: Int
-height = 1080
+height = 600
 
 cellSize :: Int
 cellSize = 30
@@ -61,7 +61,8 @@ playerAngle = 0
 startup :: IO AppState 
 startup = do 
   window <- initWindow width height "hoom"
-  let loadedTextures = []
+  let texturePaths = ["wall1.png", "wall2.png", "wall3.png", "wall4.png", "dummy.png"]
+  loadedTextures <- sequence $ map loadTexture texturePaths
   disableCursor
   return ( (playerPosition, Vector2 0 0, playerAngle, loadedTextures) , window)
 
@@ -100,7 +101,7 @@ mainLoop (state, window) =
 
         let position = positionOld |+| (velocity |* time)
 
-    --  setTargetFPS 60
+     -- setTargetFPS 60
         if isMDown then drawMap position else drawScene position angle textures
 
         fps <- getFPS
@@ -111,7 +112,7 @@ mainLoop (state, window) =
 
 drawScene :: Vector2 -> Float -> Textures -> IO ()
 drawScene position angle textures = do
-        clearBackground blue
+        clearBackground (Color 40 37 30 255)
         mousePos <- getMousePosition
         let mousePosN = (vector2'x mousePos)/(fromIntegral width)
         let playerFront = position |+| (vector2Rotate (Vector2 0.001 0.001) angle)
@@ -121,19 +122,24 @@ drawScene position angle textures = do
 drawBars :: Vector2 -> Vector2 -> Int -> Textures -> IO ()
 drawBars origin ray screenX textures
   | screenX <= width = do
-                    drawRectangle screenX (floor $ ((fromIntegral height) - (heightR))/2 ) deltaRes (floor heightR) color
+                 -- drawRectangle screenX (floor $ ((fromIntegral height) - (heightR))/2 ) deltaRes (floor heightR) color
                  -- strokeLine origin wall
+                    drawTexturePro (textures !! (0)) (Rectangle (interp*128) 0 1 128) rect (Vector2 0.0 0.0) 0.0 color
                     drawBars origin ray (screenX + deltaRes) textures 
   | otherwise = return ()
   where heightR = 1.5*(1/distance)*(fromIntegral height)
         color 
-          | wallID == 1 = Color c c (c-30) 255
+          | wallID == 1 = Color c c c ((div c 3)+170)
           | wallID == 2 = Color (c-30) (c-30) c 255
           | wallID == 3 = Color (c-100) c (c-100) 255
           | wallID == 4 = Color c c 2 255
           | otherwise = Color 255 0 0 255
         c = (floor (100 + (min (150/distance) 150) ) )
+        rect = Rectangle (fromIntegral screenX) ( ((fromIntegral height) - (heightR))/2 ) (fromIntegral deltaRes) heightR
         distance = (cos angle) * (vectorDistance origin wall)
+        interp = max x y
+        x = snd . properFraction $ vector2'x wall
+        y = snd . properFraction $ vector2'y wall
         (wall, wallID) = rayStep origin angledRay
         angledRay = origin |+| vector2Rotate (ray|-|origin) angle
         angle = (fov)*((fromIntegral screenX)/(fromIntegral width) - 0.5)
