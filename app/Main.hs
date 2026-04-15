@@ -23,13 +23,12 @@ type State = (Vector2, Vector2, Float, Textures)
 type AppState = (State, WindowResources)
 
 width :: Int 
-width  = 1440
+width  = 1200
 height :: Int
-height = 1080
+height = 900
 
 cellSize :: Int
-cellSize = 30
-
+cellSize = 20
 
 fov :: Float
 fov = 0.8
@@ -55,7 +54,7 @@ scene = [ [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
           [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
           [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
           [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-          [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ]
+          [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1] ]
 
 cols :: Int
 cols = length scene
@@ -65,6 +64,9 @@ rows = length $ head scene
 playerPosition = (Vector2 2.0 2.0)
 playerAngle = 0
 
+collisionDistance :: Float
+collisionDistance = 0.2
+
 startup :: IO AppState 
 startup = do 
   window <- initWindow width height "hoom"
@@ -73,9 +75,9 @@ startup = do
   disableCursor
   return ( (playerPosition, Vector2 1 1, playerAngle, loadedTextures) , window)
 
-acceleration = 0.04 -- in blocks per sec
-deceleration = 0.006 -- in blocks per sec
-maxSpeed = 4.0 -- in blocks per sec
+acceleration = 0.2 -- in blocks per sec
+deceleration = 0.02 -- in blocks per sec
+maxSpeed = 5.0 -- in blocks per sec
 
 boolToNum :: (Num a) => Bool -> a
 boolToNum b = if b then 1 else 0
@@ -86,7 +88,7 @@ mainLoop (state, window) =
     ( do
         let (positionOld, velocityOld, angleOld, textures) = state
         isMDown <- isKeyDown KeyM
-
+        
         xOffset1 <- fmap boolToNum (isKeyDown KeyW)
         yOffset1 <- fmap ((*(-1)).boolToNum) (isKeyDown KeyA)
         xOffset2 <- fmap ((*(-1)).boolToNum) (isKeyDown KeyS)
@@ -97,18 +99,18 @@ mainLoop (state, window) =
         mouse <- fmap vector2'x getMouseDelta 
         let angle = angleOld + mouse*0.003
 
-        let velocityCollision = getVelocityCollision positionOld
-
         -- add acceleration and deceleration
         let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) (angle+pi/4)
         let velocityDelta = ((vectorNormalize velocityDir) |* acceleration) |-| (velocityOld |* deceleration )
-        let velocityA = velocityOld + velocityDelta + velocityCollision
+        let velocityA = velocityOld + velocityDelta
+        let velocityCollision = checkCollision velocityA positionOld
+        let velocityB = velocityA |+| velocityCollision
         let mag = magnitude velocityA
-        let velocity | mag > maxSpeed = ((vectorNormalize velocityA) |* maxSpeed)
-                     | otherwise = velocityA
+        let velocity | mag > maxSpeed = ((vectorNormalize velocityB) |* maxSpeed)
+                     | otherwise = velocityB
 
         let position = positionOld |+| (velocity |* time)
-
+        
      -- setTargetFPS 60
         if isMDown then drawMap position else drawScene position angle textures
 
@@ -249,10 +251,10 @@ hittingWall a b = getWallID cx cy
           cy = fromIntegral $ abs $ floor $ by + (signum dy)*0.001
 
 getWallID :: Int -> Int -> Int
-getWallID y x 
-    | y >= cols || x >= rows = 0
-    | otherwise = (scene !! y) !! x 
-
+getWallID x y 
+  | x < 0 || y < 0 = 0
+  | x >= cols || y >= rows = 0
+  | otherwise = (scene !! x) !! y 
 
 shouldClose :: AppState -> IO Bool
 shouldClose _ = windowShouldClose
@@ -260,7 +262,27 @@ shouldClose _ = windowShouldClose
 teardown :: AppState -> IO ()
 teardown (_, win)= closeWindow . Just $ win
 
-getVelocityCollision :: Vector2 -> Vector2
-getVelocityCollision position = Vector2 0.00 0.00
+checkCollision :: Vector2 -> Vector2 -> Vector2
+checkCollision velocity position = 
+  Vector2 cvx cvy
+  where cvx
+          | right /= 0 = if velx>0 then (-velx) else 0
+          | left  /= 0 = if velx<0 then (-velx) else 0
+          | otherwise = 0
+        cvy 
+          | front /= 0 = if vely>0 then (-vely) else 0 
+          | back  /= 0 = if vely<0 then (-vely) else 0
+          | otherwise = 0
+        front = getWallIDVec2 $ (position |+| (Vector2 0   collisionDistance))
+        back  = getWallIDVec2 $ (position |+| (Vector2 0 (-collisionDistance)))
+        right = getWallIDVec2 $ (position |+| (Vector2   collisionDistance 0))
+        left  = getWallIDVec2 $ (position |+| (Vector2 (-collisionDistance) 0))
+        velx = vector2'x velocity
+        vely = vector2'y velocity
+
+getWallIDVec2 :: Vector2 -> Int
+getWallIDVec2 position = getWallID x y
+  where y = floor $ vector2'y position
+        x = floor $ vector2'x position
 
 $(raylibApplication 'startup 'mainLoop 'shouldClose 'teardown)  
