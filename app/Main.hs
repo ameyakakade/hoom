@@ -31,7 +31,7 @@ cellSize :: Int
 cellSize = 20
 
 fov :: Float
-fov = 0.8
+fov = pi/3
 
 textureSize :: Float
 textureSize = 256
@@ -61,7 +61,8 @@ cols = length scene
 rows :: Int
 rows = length $ head scene
 
-playerPosition = (Vector2 2.0 2.0)
+playerPosition = (Vector2 0.5 0.0)
+initSpeed = (Vector2 0.0 0.0)
 playerAngle = 0
 
 collisionDistance :: Float
@@ -73,7 +74,7 @@ startup = do
   let texturePaths = ["dummy.png", "wall1.png", "wall2.png", "wall3.png", "wall4.png", "error.png"]
   loadedTextures <- sequence $ map loadTexture texturePaths
   disableCursor
-  return ( (playerPosition, Vector2 1 1, playerAngle, loadedTextures) , window)
+  return ( (playerPosition, initSpeed, playerAngle, loadedTextures) , window)
 
 acceleration = 0.2 -- in blocks per sec
 deceleration = 0.02 -- in blocks per sec
@@ -100,7 +101,7 @@ mainLoop (state, window) =
         let angle = angleOld + mouse*0.003
 
         -- add acceleration and deceleration
-        let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) (angle+pi/4)
+        let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) angle
         let velocityDelta = ((vectorNormalize velocityDir) |* acceleration) |-| (velocityOld |* deceleration )
         let velocityA = velocityOld + velocityDelta
         let velocityCollision = checkCollision velocityA positionOld
@@ -125,17 +126,16 @@ drawScene position angle textures = do
         clearBackground (Color 40 37 30 255)
         mousePos <- getMousePosition
         let mousePosN = (vector2'x mousePos)/(fromIntegral width)
-        let playerFront = position |+| (vector2Rotate (Vector2 0.001 0.001) angle)
-        drawBars position playerFront 0 textures
+        drawBars position angle 0 textures
         return ()
 
-drawBars :: Vector2 -> Vector2 -> Int -> Textures -> IO ()
-drawBars origin ray screenX textures
+drawBars :: Vector2 -> Float -> Int -> Textures -> IO ()
+drawBars origin angle screenX textures
   | screenX <= width = do
                  -- drawRectangle screenX (floor $ ((fromIntegral height) - (heightR))/2 ) deltaRes (floor heightR) color
                  -- strokeLine origin wall
                     drawTexturePro (textures !! (wallID)) (Rectangle (interp*textureSize) 0 1 textureSize) rect (Vector2 0.0 0.0) 0.0 color
-                    drawBars origin ray (screenX + deltaRes) textures 
+                    drawBars origin angle (screenX + deltaRes) textures 
   | otherwise = return ()
   where heightR = 1.5*(1/distance)*(fromIntegral height)
         color 
@@ -143,13 +143,13 @@ drawBars origin ray screenX textures
           | otherwise = Color 255 255 255 (c)
         c = floor $ min ( ((10/distance)^2)*255 ) 255 
         rect = Rectangle (fromIntegral screenX) ( ((fromIntegral height) - (heightR))/2 ) (fromIntegral deltaRes) heightR
-        distance = (cos angle) * (vectorDistance origin wall)
+        distance = (wall |-| origin) |.| vector2Rotate (Vector2 1.0 0.0) angle
         interp = max x y
         x = snd . properFraction $ vector2'x wall
         y = snd . properFraction $ vector2'y wall
         (wall, wallID) = rayStep origin angledRay
-        angledRay = origin |+| vector2Rotate (ray|-|origin) angle
-        angle = (fov)*((fromIntegral screenX)/(fromIntegral width) - 0.5)
+        angledRay = origin |+| vector2Rotate (Vector2 collisionDistance (xinterp*0.15)) angle
+        xinterp = (fromIntegral screenX)/(fromIntegral width) - 0.5
         deltaRes = 1
   
 
