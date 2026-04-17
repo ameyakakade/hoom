@@ -73,7 +73,8 @@ executable hoom
 
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.20.0.0,
-                      h-raylib
+                      h-raylib,
+                      vector
 
     -- Directories containing source files.
     hs-source-dirs:   app

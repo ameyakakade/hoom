@@ -3,6 +3,7 @@ module Raystep (rayStep, getWallID, getWallIDVec2) where
 
 import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y)
+import qualified Data.Vector.Unboxed as V
 
 import Constants 
 
@@ -48,10 +49,10 @@ hittingWall scene a b = getWallID scene cx cy
           cy = fromIntegral $ abs $ floor $ by + (signum dy)*0.001
 
 getWallID :: Scene -> Int -> Int -> Int
-getWallID (cols, rows, scene) x y 
-  | x < 0 || y < 0 = 0
-  | x >= cols || y >= rows = 0
-  | otherwise = (scene !! x) !! y 
+getWallID (cols, rows, scene) y x 
+  | y < 0 || x < 0 = 0
+  | y >= cols || x >= rows = 0
+  | otherwise = scene V.! (rows*y + x) 
 
 getWallIDVec2 :: Scene -> Vector2 -> Int
 getWallIDVec2 scene position = getWallID scene x y

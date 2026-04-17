@@ -6,6 +6,8 @@ module Constants (width, height, cellSize, planeEnds, textureSize
 
 import Raylib.Util (WindowResources)
 import Raylib.Types (Vector2, Texture)
+import qualified Data.Vector.Unboxed as V
+
 width :: Int 
 width  = 1200
 height :: Int
@@ -39,4 +41,4 @@ type Player = (Vector2, Vector2, Float)
            -- level  player  textures
 type State = (Scene, Player, Textures)
 type AppState = (State, WindowResources)
-type Scene = (Int, Int, [[Int]])
+type Scene = (Int, Int, V.Vector Int)

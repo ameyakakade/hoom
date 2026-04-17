@@ -10,6 +10,8 @@ import Raylib.Util.Colors (lightGray, rayWhite, red, black, blue)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
                     ,Texture, Rectangle, pattern Rectangle)
 
+import qualified Data.Vector.Unboxed as V
+
 import Constants
 import Raystep
 
@@ -31,17 +33,18 @@ drawGrid = do
             drawCols 0
 
 drawCells :: Scene -> Int -> IO ()
-drawCells (_,_,[]) _ = return ()
+drawCells (0,0,_) _ = return ()
 drawCells (x,y,list) no = do
-                drawCellsHelper (head list) no 0
-                drawCells (x, y,(tail list)) (no+1)
+                drawCellsHelper (V.take y list) no 0
+                drawCells (x, y,(V.drop y list)) (no+1)
 
-drawCellsHelper :: [Int] -> Int -> Int -> IO ()
-drawCellsHelper [] _ _= return ()
-drawCellsHelper list x y = do
-                        drawCellsHelper (tail list) x (y+1)
-                        let wallID = head list in 
-                            if wallID/=0 then drawRectangle (x*cellSize) (y*cellSize) cellSize cellSize lightGray else return ()
+drawCellsHelper :: V.Vector Int -> Int -> Int -> IO ()
+drawCellsHelper list x y
+  | (list == V.empty) = return ()
+  | otherwise = do
+      drawCellsHelper (V.tail list) x (y+1)
+      let wallID = V.head list in 
+        if wallID/=0 then drawRectangle (x*cellSize) (y*cellSize) cellSize cellSize lightGray else return ()
 
 drawRows :: Int -> IO ()
 drawRows h 
