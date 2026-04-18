@@ -24,7 +24,7 @@ drawBars scene origin angle screenX textures
                     drawTexturePro (textures !! (wallID)) (Rectangle (interp*textureSize) 0 1 textureSize) rect (Vector2 0.0 0.0) 0.0 color
                     drawBars scene origin angle (screenX + deltaRes) textures 
   | otherwise = return ()
-  where heightR = (1/distance)*(fromIntegral height)
+  where heightR = (1/distance)*(fromIntegral height)*heightFactor
         color 
           | wallID == 5 = Color 255 0 0 255
           | otherwise = Color 255 255 255 (c)

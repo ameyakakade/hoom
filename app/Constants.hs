@@ -1,6 +1,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 module Constants (width, height, cellSize, planeEnds, textureSize
-                 ,collisionDistance, acceleration
+                 ,collisionDistance, acceleration, heightFactor
                  ,deceleration, maxSpeed, Textures, State
                  ,AppState, Scene, Player) where
 
@@ -9,16 +9,18 @@ import Raylib.Types (Vector2, Texture)
 import qualified Data.Vector.Unboxed as V
 
 width :: Int 
-width  = 1200
+width  = 1600
 height :: Int
-height = 900
+height = 1000
 
 cellSize :: Int
 cellSize = 20
 
 fov :: Float
-fov = pi/2
+fov = pi/1.5
 planeEnds = collisionDistance * (tan (fov/2))
+heightFactor :: Float
+heightFactor = (1/(tan (fov/2)))*(fromIntegral width)/(fromIntegral height)
 
 textureSize :: Float
 textureSize = 256

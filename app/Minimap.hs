@@ -33,10 +33,11 @@ drawGrid = do
             drawCols 0
 
 drawCells :: Scene -> Int -> IO ()
-drawCells (0,0,_) _ = return ()
-drawCells (x,y,list) no = do
-                drawCellsHelper (V.take y list) no 0
-                drawCells (x, y,(V.drop y list)) (no+1)
+drawCells (x,y,list) no
+  | list == V.empty = return ()
+  | otherwise = do
+      drawCellsHelper (V.take y list) no 0
+      drawCells (x, y,(V.drop y list)) (no+1)
 
 drawCellsHelper :: V.Vector Int -> Int -> Int -> IO ()
 drawCellsHelper list x y
