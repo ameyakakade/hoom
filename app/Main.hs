@@ -28,7 +28,7 @@ import ParseLevel
 startup :: IO AppState 
 startup = do 
   window <- initWindow width height "hoom"
-  let texturePaths = ["textures/dummy.png", "textures/wall1.png", "textures/wall2.png", "textures/wall3.png", "textures/wall4.png", "textures/error.png"]
+  let texturePaths = ["textures/floor_01.png", "textures/wall1.png", "textures/wall2.png", "textures/wall3.png", "textures/wall4.png", "textures/error.png", "textures/sky.png"]
   loadedTextures <- sequence $ map loadTexture texturePaths
   disableCursor
 
