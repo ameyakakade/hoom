@@ -12,7 +12,6 @@ import Raystep
 
 drawScene :: Scene -> Vector2 -> Float -> Textures -> IO ()
 drawScene scene position angle textures = do
-        clearBackground (Color 255 255 255 255)
         clearBackground (Color 70 100 150 255)
         drawSkybox angle textures
         drawBars scene position angle 0 textures
@@ -21,17 +20,17 @@ drawScene scene position angle textures = do
 drawBars :: Scene -> Vector2 -> Float -> Int -> Textures -> IO ()
 drawBars scene origin angle screenX textures
   | screenX <= width = do
-                 -- drawRectangle screenX (floor $ ((fromIntegral height) - (heightR))/2 ) deltaRes (floor heightR) color
                  -- strokeLine origin wall
-                    drawTexturePro (textures !! (wallID)) (Rectangle (interp*textureSize) 0 1 textureSize) rect (Vector2 0.0 0.0) 0.0 color
-                    drawBars scene origin angle (screenX + deltaRes) textures 
+      drawTexturePro (textures !! (wallID)) textureRect drawingRect (Vector2 0.0 0.0) 0.0 color
+      drawBars scene origin angle (screenX + (floor deltaRes)) textures 
   | otherwise = return ()
   where heightR = (1/distance)*(fromIntegral height)*heightFactor
         color 
           | wallID == 5 = Color 255 0 0 255
-          | otherwise = Color 255 255 255 (c)
-        c = floor $ min ( ((10/distance)^2)*255 ) 255 
-        rect = Rectangle (fromIntegral screenX) ( ((fromIntegral height) - (heightR))/2 ) (fromIntegral deltaRes) heightR
+          | otherwise = Color 255 255 255 c
+        c = floor $ min ( ((20/distance)^2)*255 ) 255 
+        drawingRect = Rectangle (fromIntegral screenX) ( ((fromIntegral height) - (heightR))/2 ) deltaRes heightR
+        textureRect = Rectangle (interp*textureSize) 0 deltaRes textureSize
         distance = (wall |-| origin) |.| vector2Rotate (Vector2 1.0 0.0) angle
         interp = max x y
         x = snd . properFraction $ vector2'x wall
@@ -40,6 +39,7 @@ drawBars scene origin angle screenX textures
         angledRay = origin |+| vector2Rotate (Vector2 collisionDistance (xinterp*planeEnds)) angle
         xinterp = (fromIntegral screenX)/(fromIntegral width) - 0.5
         deltaRes = 1
+        deltaRes = 1.0
   
 
 drawSkybox :: Float -> Textures -> IO ()
