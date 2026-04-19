@@ -13,6 +13,8 @@ import Raystep
 drawScene :: Scene -> Vector2 -> Float -> Textures -> IO ()
 drawScene scene position angle textures = do
         clearBackground (Color 255 255 255 255)
+        clearBackground (Color 70 100 150 255)
+        drawSkybox angle textures
         drawBars scene position angle 0 textures
         return ()
 
@@ -39,3 +41,12 @@ drawBars scene origin angle screenX textures
         xinterp = (fromIntegral screenX)/(fromIntegral width) - 0.5
         deltaRes = 1
   
+
+drawSkybox :: Float -> Textures -> IO ()
+drawSkybox angle textures = do
+  let sky = textures !! 6
+  let drawingRect = Rectangle 0 0 (fromIntegral width) ((fromIntegral height))
+  let w = 1024/2
+  let textureRect = Rectangle (angle*w/(2*pi)) 0 w 512
+  drawTexturePro sky textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
+  return ()
