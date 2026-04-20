@@ -17,8 +17,8 @@ import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
                     ,KeyboardKey(KeyS), KeyboardKey(KeyD))
 
 import System.IO
-import System.Environment
 
+import System.Environment
 import Constants
 import Minimap
 import Render
@@ -88,4 +88,4 @@ shouldClose _ = windowShouldClose
 teardown :: AppState -> IO ()
 teardown (_, win)= closeWindow . Just $ win
 
-$(raylibApplication 'startup 'mainLoop 'shouldClose 'teardown)  
+$(raylibApplication 'startup 'mainLoop 'shouldClose 'teardown)
