@@ -8,7 +8,7 @@ import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rota
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
                     ,Color (Color) ,Texture, Rectangle, pattern Rectangle)
 
-import qualified Data.Vector.Storable as V
+import qualified Data.Vector.Storable as VS
 import qualified Data.Word as W
 import qualified Foreign.ForeignPtr as P
 import qualified Foreign.Ptr as PP
@@ -16,11 +16,14 @@ import qualified Foreign.Ptr as PP
 import Constants
 import Raystep
 
-drawScene :: Scene -> Vector2 -> Float -> Textures -> IO ()
-drawScene scene position angle textures = do
+texW = 1600
+texH = 500
+
+drawScene :: Scene -> Vector2 -> Float -> Textures -> FloorTex -> IO ()
+drawScene scene position angle textures floorTex = do
   clearBackground (Color 70 100 150 255)
   drawSkybox angle textures
-  drawFloor position angle textures
+  drawFloor position angle textures floorTex
   drawBars scene position angle 0 textures
   return ()
 
@@ -47,18 +50,28 @@ drawBars scene origin angle screenX textures
         xinterp = (fromIntegral screenX)/(fromIntegral width) - 0.5
         deltaRes = 1.0
 
-drawFloor :: Vector2 -> Float -> Textures -> IO ()
-drawFloor position angle textures = do 
-  let floorTex = textures !! 0
-  let a = V.generate (512*512*3) (fn angle)
-  let (p, offset, len) = V.unsafeToForeignPtr a
+drawFloor :: Vector2 -> Float -> Textures -> FloorTex -> IO ()
+drawFloor position angle textures floorTex = do 
+  let fun = fn floorTex position angle
+  let a = VS.generate (texW*texH) fun
+  let floorCanvas = textures !! 0
+  let (p, offset, len) = VS.unsafeToForeignPtr a
   let vp = P.castForeignPtr p :: P.ForeignPtr ()
   let h2 = (fromIntegral height)/2
   let drawingRect = Rectangle 0 (h2) (fromIntegral width) (h2)
-  let textureRect = Rectangle 0 0 512 512
+  let textureRect = Rectangle 0 0 (fromIntegral texW) (fromIntegral texH)
 
-  P.withForeignPtr vp (updateTexture floorTex)
-  drawTexturePro floorTex textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
+  P.withForeignPtr vp (updateTexture floorCanvas)
+  drawTexturePro floorCanvas textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
+
+fn :: FloorTex -> Vector2 -> Float -> Int -> W.Word32
+fn floorTex position angle i 
+  | 0 == 0 = (VS.!) floorTex (tx + ty*512)
+  | otherwise = 4278295360
+  where x = mod i texW
+        y = div i texW
+        tx = mod x 512
+        ty = mod y 512
 
 drawFloorHelper :: Vector2 -> Float -> Int -> Textures -> IO ()
 drawFloorHelper position angle screenY textures
@@ -85,7 +98,4 @@ drawSkybox angle textures = do
   drawTexturePro sky textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
   return ()
 
-fn :: Float -> Int -> W.Word8
-fn a i
-  | a > 2 = 255
-  | otherwise = if ((mod i 3)==0) then 255 else 0
+  -- a b g r

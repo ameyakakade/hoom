@@ -8,17 +8,20 @@ import Raylib.Core (initWindow, setTargetFPS
                    ,getMouseDelta, isKeyDown
                    ,disableCursor, getFrameTime)
 import Raylib.Core.Text (drawText)
-import Raylib.Core.Textures (loadTexture)
+import Raylib.Core.Textures (loadTexture, loadImage, exportImageToMemory)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
 import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate)
 import Raylib.Util.Colors (red)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
                     ,KeyboardKey(KeyM), KeyboardKey(KeyW), KeyboardKey(KeyA)
-                    ,KeyboardKey(KeyS), KeyboardKey(KeyD))
+                    ,KeyboardKey(KeyS), KeyboardKey(KeyD), Image, image'data)
 
 import System.IO
-
 import System.Environment
+import qualified Data.Vector.Storable as VS
+import qualified Data.Word as W
+import Data.Bits
+
 import Constants
 import Minimap
 import Render
@@ -27,18 +30,23 @@ import ParseLevel
 
 startup :: IO AppState 
 startup = do 
-  window <- initWindow width height "hoom"
-  let texturePaths = ["textures/floor_01.png", "textures/wall1.png", "textures/wall2.png", "textures/wall3.png", "textures/wall4.png", "textures/error.png", "textures/sky.png"]
+  window <- initWindow width height "Hoom"
+  let texturePaths = ["textures/Untitled.png", "textures/wall1.png", "textures/wall2.png", "textures/wall3.png", "textures/wall4.png", "textures/error.png", "textures/sky.png"]
   loadedTextures <- sequence $ map loadTexture texturePaths
   disableCursor
 
-  [filename] <-getArgs
+  floorImg <- loadImage "textures/Ground.png"
+  let floorLis = image'data floorImg
+  -- converting a image which is [Word8] into vector of word32 in abgr format
+  let (floorTex) = VS.fromList $ map (foldl (\acc x -> x .|. (shiftL acc 8)) 0) $ ( foldl' (\acc x -> if ( (length $ head acc)>3) then [x]:acc else ( x:(head acc)):(tail acc)) [[]] $ map fromIntegral floorLis)
+
+  [filename] <- getArgs
   levelHandle <- openFile filename ReadMode
   contents <- hGetContents levelHandle
 
   let (playerData, levelData) = parseLevel contents 
 
-  return ( (levelData, playerData, loadedTextures) , window)
+  return ( (levelData, playerData, loadedTextures, floorTex) , window)
 
 boolToNum :: (Num a) => Bool -> a
 boolToNum b = if b then 1 else 0
@@ -47,7 +55,7 @@ mainLoop :: AppState -> IO AppState
 mainLoop (state, window) =
   drawing
     ( do
-        let (scene, (positionOld, velocityOld, angleOld), textures) = state
+        let (scene, (positionOld, velocityOld, angleOld), textures, floorTex) = state
         isMDown <- isKeyDown KeyM
         
         xOffset1 <- fmap boolToNum (isKeyDown KeyW)
@@ -73,12 +81,12 @@ mainLoop (state, window) =
         let position = positionOld |+| (velocity |* time)
         
      -- setTargetFPS 60
-        if isMDown then drawMap scene position else drawScene scene position angle textures
+        if isMDown then drawMap scene position else drawScene scene position angle textures floorTex
 
         fps <- getFPS
         drawText ("FPS: " ++ (show fps)) 30 40 30 red
 
-        return ( (scene, (position, velocity, angle), textures), window)
+        return ( (scene, (position, velocity, angle), textures, floorTex), window)
     )
 
 

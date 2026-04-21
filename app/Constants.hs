@@ -2,11 +2,14 @@
 module Constants (width, height, cellSize, planeEnds, textureSize
                  ,collisionDistance, acceleration, heightFactor
                  ,deceleration, maxSpeed, Textures, State
-                 ,AppState, Scene, Player) where
+                 ,AppState, Scene, Player, FloorTex) where
 
 import Raylib.Util (WindowResources)
 import Raylib.Types (Vector2, Texture)
+
 import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector.Storable as VS
+import qualified Data.Word as W
 
 width :: Int 
 width  = 1600
@@ -38,9 +41,10 @@ maxSpeed :: Float
 maxSpeed = 5.0 -- in blocks per sec
 
 type Textures = [Texture]
+type FloorTex = VS.Vector W.Word32
   --          position speed angle
 type Player = (Vector2, Vector2, Float)
            -- level  player  textures
-type State = (Scene, Player, Textures)
-type AppState = (State, WindowResources)
+type State = (Scene, Player, Textures, FloorTex)
 type Scene = (Int, Int, V.Vector Int)
+type AppState = (State, WindowResources)
