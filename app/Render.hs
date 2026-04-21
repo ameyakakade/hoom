@@ -4,7 +4,7 @@ module Render (drawScene) where
 import Raylib.Core (clearBackground)
 import Raylib.Core.Shapes (drawRectangle)
 import Raylib.Core.Textures (loadTexture, drawTexturePro, updateTexture)
-import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate)
+import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate, vectorLerp)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
                     ,Color (Color) ,Texture, Rectangle, pattern Rectangle)
 
@@ -18,6 +18,8 @@ import Raystep
 
 texW = 1600
 texH = 500
+
+type FloorPos = VS.Vector Vector2
 
 drawScene :: Scene -> Vector2 -> Float -> Textures -> FloorTex -> IO ()
 drawScene scene position angle textures floorTex = do
@@ -52,7 +54,10 @@ drawBars scene origin angle screenX textures
 
 drawFloor :: Vector2 -> Float -> Textures -> FloorTex -> IO ()
 drawFloor position angle textures floorTex = do 
-  let fun = fn floorTex position angle
+
+  let (leftPos, rightPos) = createPosArrays position angle
+  
+  let fun = fn floorTex leftPos rightPos
   let a = VS.generate (texW*texH) fun
   let floorCanvas = textures !! 0
   let (p, offset, len) = VS.unsafeToForeignPtr a
@@ -64,29 +69,47 @@ drawFloor position angle textures floorTex = do
   P.withForeignPtr vp (updateTexture floorCanvas)
   drawTexturePro floorCanvas textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
 
-fn :: FloorTex -> Vector2 -> Float -> Int -> W.Word32
-fn floorTex position angle i 
+-- give this a array of start and end positions as vectors which it will read
+-- this function is like a shader
+
+fn :: FloorTex -> FloorPos -> FloorPos -> Int -> W.Word32
+fn floorTex leftPos rightPos i 
   | 0 == 0 = (VS.!) floorTex (tx + ty*512)
   | otherwise = 4278295360
   where x = mod i texW
         y = div i texW
-        tx = mod x 512
-        ty = mod y 512
+        tx = mod wx 512
+        ty = mod wy 512
+        wx = floor $ (vector2'x pos)*128
+        wy = floor $ (vector2'y pos)*128
+        leftV = leftPos VS.! y
+        rightV = rightPos VS.! y
+        pos = (vectorLerp leftV rightV ( (fromIntegral x)/(fromIntegral texW) ))
 
-drawFloorHelper :: Vector2 -> Float -> Int -> Textures -> IO ()
-drawFloorHelper position angle screenY textures
-  | screenY > (div height 2) = do
+createPosArrays :: Vector2 -> Float -> (FloorPos, FloorPos)
+createPosArrays position angle = tLtV $ distToEnds $ map (*fovScaling) $ map yToDist [0..texH]
+  where fovScaling = 1/( cos (fov/2) )
+        yToDist = \y -> ((fromIntegral height)*heightFactor*) $ (1/) $ (fromIntegral y) 
+        leftV  = (vector2Rotate (Vector2 1.0 0.0) ((-fov/2)+angle))
+        rightV = (vector2Rotate (Vector2 1.0 0.0) (( fov/2)+angle))
+        distToEndsL = \dist -> position + leftV|*dist
+        distToEndsR = \dist -> position + rightV|*dist
+        distToEnds = \distL -> (map distToEndsL distL, map distToEndsR distL)
+        tLtV = \(l, r) -> (VS.fromList l, VS.fromList r)
 
-      drawFloorHelper position angle (screenY-(floor deltaRes)) textures
-  | otherwise = return ()
-  where color = Color c c c cd
-        c = floor $ interp*100
-        cd = floor $ min ( ((40/distance)^2)*255 ) 255 
-        interp = (fromIntegral screenY)/(fromIntegral height)
-        distance = ((fromIntegral height)*heightFactor*) $ (1/) $ (fromIntegral screenY) - (fromIntegral $ div height 2)
-        deltaRes = 1.0
-        x = vector2'x position
-        y = vector2'y position
+-- drawFloorHelper :: Vector2 -> Float -> Int -> Textures -> IO ()
+-- drawFloorHelper position angle screenY textures
+--   | screenY > (div height 2) = do
+
+--       drawFloorHelper position angle (screenY-(floor deltaRes)) textures
+--   | otherwise = return ()
+--   where color = Color c c c cd
+--         c = floor $ interp*100
+--         cd = floor $ min ( ((40/distance)^2)*255 ) 255 
+--         interp = (fromIntegral screenY)/(fromIntegral height)
+--         deltaRes = 1.0
+--         x = vector2'x position
+--         y = vector2'y position
 
 drawSkybox :: Float -> Textures -> IO ()
 drawSkybox angle textures = do

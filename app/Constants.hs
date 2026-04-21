@@ -1,7 +1,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 module Constants (width, height, cellSize, planeEnds, textureSize
                  ,collisionDistance, acceleration, heightFactor
-                 ,deceleration, maxSpeed, Textures, State
+                 ,deceleration, maxSpeed, fov, Textures, State
                  ,AppState, Scene, Player, FloorTex) where
 
 import Raylib.Util (WindowResources)
