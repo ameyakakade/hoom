@@ -1,6 +1,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 module Constants (width, height, cellSize, planeEnds, textureSize, sWidth, sHeight
-                 ,collisionDistance, acceleration, heightFactor
+                 ,collisionDistance, acceleration, heightFactor, fi
                  ,deceleration, maxSpeed, fov, Textures, State, Canvas
                  ,AppState, Scene, Player, FloorTex) where
 
@@ -12,29 +12,29 @@ import qualified Data.Vector.Storable as VS
 import qualified Data.Word as W
 
 width :: Int 
-width  = div 1920 2
+width  = div sWidth 1
 height :: Int
-height = div 1080 2
+height = div sHeight 1
 
 sWidth :: Int
-sWidth = 1920
+sWidth = 1600
 sHeight :: Int
-sHeight = 1080
+sHeight = 900
 
 cellSize :: Int
 cellSize = 20
 
 fov :: Float
-fov = pi/1.5
+fov = pi/3
 planeEnds = collisionDistance * (tan (fov/2))
 heightFactor :: Float
-heightFactor = (1/(tan (fov/2)))*(fromIntegral width)/(fromIntegral height)
+heightFactor = (fromIntegral width)/(fromIntegral height)
 
 textureSize :: Float
 textureSize = 256
 
 collisionDistance :: Float
-collisionDistance = 0.2
+collisionDistance = 0.1
 
 acceleration :: Float
 acceleration = 0.2 -- in blocks per sec
@@ -54,3 +54,5 @@ type Player = (Vector2, Vector2, Float)
 type State = (Scene, Player, Textures, FloorTex, Canvas)
 type Scene = (Int, Int, V.Vector Int)
 type AppState = (State, WindowResources)
+
+fi = fromIntegral

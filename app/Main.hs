@@ -1,5 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
@@ -12,7 +12,7 @@ import Raylib.Core.Textures (loadTexture, loadImage, loadRenderTexture)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
 import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate)
 import Raylib.Util.Colors (red)
-import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
+import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, renderTexture'texture
                     ,KeyboardKey(KeyM), KeyboardKey(KeyW), KeyboardKey(KeyA)
                     ,KeyboardKey(KeyS), KeyboardKey(KeyD), Image, image'data)
 
@@ -31,8 +31,11 @@ import ParseLevel
 startup :: IO AppState 
 startup = do 
   window <- initWindow sWidth sHeight "Hoom"
-  let texturePaths = ["textures/Untitled2.png", "textures/wall1.png", "textures/wall2.png", "textures/wall3.png", "textures/wall4.png", "textures/error.png", "textures/sky.png"]
-  loadedTextures <- sequence $ map loadTexture texturePaths
+  let texturePaths = ["textures/wall1.png", "textures/wall2.png", "textures/wall3.png", "textures/wall4.png", "textures/error.png", "textures/sky.png"]
+  floorCanvas <- loadRenderTexture width (div height 2)
+  loadedTexturesA <- sequence $ map loadTexture texturePaths
+  let loadedTextures = (renderTexture'texture floorCanvas):loadedTexturesA
+  
   disableCursor
 
   floorImg <- loadImage "textures/floor_01.png"

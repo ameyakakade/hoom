@@ -17,8 +17,8 @@ import qualified Foreign.Ptr as PP
 import Constants
 import Raystep
 
-texW = 800
-texH = 250
+texW = width
+texH = div height 2
 
 type FloorPos = VS.Vector Vector2
 
@@ -28,17 +28,19 @@ drawScene scene position angle textures floorTex canvas = do
     clearBackground (Color 70 100 150 255)
     drawSkybox angle textures
     drawFloor position angle textures floorTex
-    drawBars scene position angle 0 textures
+    let left  = position |+| vector2Rotate (Vector2 collisionDistance (-planeEnds) ) angle
+    let right = position |+| vector2Rotate (Vector2 collisionDistance ( planeEnds) ) angle
+    drawBars scene position left right angle 0 textures
                      )
   drawTexturePro (renderTexture'texture canvas) (Rectangle 0 0 (fromIntegral width) (-(fromIntegral height)) ) (Rectangle 0 0 (fromIntegral sWidth) (fromIntegral sHeight)) (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
 
 
-drawBars :: Scene -> Vector2 -> Float -> Int -> Textures -> IO ()
-drawBars scene origin angle screenX textures
+drawBars :: Scene -> Vector2 -> Vector2 -> Vector2 -> Float -> Int -> Textures -> IO ()
+drawBars scene origin left right angle screenX textures
   | screenX <= width = do
                  -- strokeLine origin wall
       drawTexturePro (textures !! (wallID)) textureRect drawingRect (Vector2 0.0 0.0) 0.0 color
-      drawBars scene origin angle (screenX + (floor deltaRes)) textures 
+      drawBars scene origin left right angle (screenX + (floor deltaRes)) textures 
   | otherwise = return ()
   where heightR = (1/distance)*(fromIntegral height)*heightFactor
         color 
@@ -52,8 +54,8 @@ drawBars scene origin angle screenX textures
         x = snd . properFraction $ vector2'x wall
         y = snd . properFraction $ vector2'y wall
         (wall, wallID) = rayStep scene origin angledRay
-        angledRay = origin |+| vector2Rotate (Vector2 collisionDistance (xinterp*planeEnds)) angle
-        xinterp = (fromIntegral screenX)/(fromIntegral width) - 0.5
+        angledRay = vectorLerp left right xinterp
+        xinterp = (fromIntegral screenX)/(fromIntegral width)
         deltaRes = 1.0
 
 drawFloor :: Vector2 -> Float -> Textures -> FloorTex -> IO ()
@@ -84,22 +86,26 @@ fn floorTex leftPos rightPos i
         y = div i texW
         tx = mod wx 512
         ty = mod wy 512
-        wx = floor $ (vector2'x pos)*128
-        wy = floor $ (vector2'y pos)*128
+        wx = floor $ (vector2'x pos)*256
+        wy = floor $ (vector2'y pos)*256
         leftV = leftPos VS.! y
         rightV = rightPos VS.! y
         pos = (vectorLerp leftV rightV ( (fromIntegral x)/(fromIntegral texW) ))
 
+fovScaling = 1/(cos (fov/2))
+
 createPosArrays :: Vector2 -> Float -> (FloorPos, FloorPos)
 createPosArrays position angle = tLtV $ distToEnds $ map (*fovScaling) $ map yToDist [0..texH]
-  where fovScaling = 1
-        yToDist = \y -> ((fromIntegral height)*) $ (1/) $ (fromIntegral y) 
-        leftV  = (vector2Rotate (Vector2 1.0 0.0) ((-fov/2)+angle))
+  where leftV  = (vector2Rotate (Vector2 1.0 0.0) ((-fov/2)+angle))
         rightV = (vector2Rotate (Vector2 1.0 0.0) (( fov/2)+angle))
         distToEndsL = \dist -> position + leftV|*dist
         distToEndsR = \dist -> position + rightV|*dist
         distToEnds = \distL -> (map distToEndsL distL, map distToEndsR distL)
         tLtV = \(l, r) -> (VS.fromList l, VS.fromList r)
+
+yToDist :: Int -> Float
+yToDist y = ( ((fromIntegral texH)*heightFactor*) $ (1/) $ yy ) :: Float
+  where yy = fromIntegral y
 
 -- drawFloorHelper :: Vector2 -> Float -> Int -> Textures -> IO ()
 -- drawFloorHelper position angle screenY textures
