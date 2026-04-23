@@ -4,8 +4,9 @@ module Render (drawScene) where
 import Raylib.Core (clearBackground)
 import Raylib.Core.Shapes (drawRectangle)
 import Raylib.Core.Textures (loadTexture, drawTexturePro, updateTexture)
+import Raylib.Util(textureMode)
 import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate, vectorLerp)
-import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
+import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, renderTexture'texture
                     ,Color (Color) ,Texture, Rectangle, pattern Rectangle)
 
 import qualified Data.Vector.Storable as VS
@@ -16,18 +17,21 @@ import qualified Foreign.Ptr as PP
 import Constants
 import Raystep
 
-texW = 1600
-texH = 500
+texW = 800
+texH = 250
 
 type FloorPos = VS.Vector Vector2
 
-drawScene :: Scene -> Vector2 -> Float -> Textures -> FloorTex -> IO ()
-drawScene scene position angle textures floorTex = do
-  clearBackground (Color 70 100 150 255)
-  drawSkybox angle textures
-  drawFloor position angle textures floorTex
-  drawBars scene position angle 0 textures
-  return ()
+drawScene :: Scene -> Vector2 -> Float -> Textures -> FloorTex -> Canvas -> IO ()
+drawScene scene position angle textures floorTex canvas = do
+  textureMode canvas (do
+    clearBackground (Color 70 100 150 255)
+    drawSkybox angle textures
+    drawFloor position angle textures floorTex
+    drawBars scene position angle 0 textures
+                     )
+  drawTexturePro (renderTexture'texture canvas) (Rectangle 0 0 (fromIntegral width) (-(fromIntegral height)) ) (Rectangle 0 0 (fromIntegral sWidth) (fromIntegral sHeight)) (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
+
 
 drawBars :: Scene -> Vector2 -> Float -> Int -> Textures -> IO ()
 drawBars scene origin angle screenX textures
@@ -88,8 +92,8 @@ fn floorTex leftPos rightPos i
 
 createPosArrays :: Vector2 -> Float -> (FloorPos, FloorPos)
 createPosArrays position angle = tLtV $ distToEnds $ map (*fovScaling) $ map yToDist [0..texH]
-  where fovScaling = 1/( cos (fov/2) )
-        yToDist = \y -> ((fromIntegral height)*heightFactor*) $ (1/) $ (fromIntegral y) 
+  where fovScaling = 1
+        yToDist = \y -> ((fromIntegral height)*) $ (1/) $ (fromIntegral y) 
         leftV  = (vector2Rotate (Vector2 1.0 0.0) ((-fov/2)+angle))
         rightV = (vector2Rotate (Vector2 1.0 0.0) (( fov/2)+angle))
         distToEndsL = \dist -> position + leftV|*dist
