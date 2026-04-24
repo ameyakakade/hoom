@@ -30,18 +30,19 @@ drawScene scene position angle textures floorTex canvas = do
     drawFloor position angle textures floorTex
     let left  = position |+| vector2Rotate (Vector2 collisionDistance (-planeEnds) ) angle
     let right = position |+| vector2Rotate (Vector2 collisionDistance ( planeEnds) ) angle
-    drawBars scene position left right angle 0 textures
+    zBuf <- drawBars scene position left right angle 0 textures
+    return ()
                      )
   drawTexturePro (renderTexture'texture canvas) (Rectangle 0 0 (fromIntegral width) (-(fromIntegral height)) ) (Rectangle 0 0 (fromIntegral sWidth) (fromIntegral sHeight)) (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
 
 
-drawBars :: Scene -> Vector2 -> Vector2 -> Vector2 -> Float -> Int -> Textures -> IO ()
+drawBars :: Scene -> Vector2 -> Vector2 -> Vector2 -> Float -> Int -> Textures -> IO [Float]
 drawBars scene origin left right angle screenX textures
   | screenX <= width = do
                  -- strokeLine origin wall
       drawTexturePro (textures !! (wallID)) textureRect drawingRect (Vector2 0.0 0.0) 0.0 color
-      drawBars scene origin left right angle (screenX + (floor deltaRes)) textures 
-  | otherwise = return ()
+      fmap (distance:) $ drawBars scene origin left right angle (screenX + (floor deltaRes)) textures
+  | otherwise = return [0.0]
   where heightR = (1/distance)*(fromIntegral height)*heightFactor
         color 
           | wallID == 5 = Color 255 0 0 255
@@ -84,8 +85,8 @@ fn floorTex leftPos rightPos i
   | otherwise = 4278295360
   where x = mod i texW
         y = div i texW
-        tx = mod wx 512
-        ty = mod wy 512
+        tx = mod wx 256
+        ty = mod wy 256
         wx = floor $ (vector2'x pos)*256
         wy = floor $ (vector2'y pos)*256
         leftV = leftPos VS.! y

@@ -38,7 +38,7 @@ startup = do
   
   disableCursor
 
-  floorImg <- loadImage "textures/floor_01.png"
+  floorImg <- loadImage "textures/Ground.png"
   let floorLis = image'data floorImg
   -- converting a image which is [Word8] into vector of word32 in abgr format
   let (floorTex) = VS.fromList $ map (foldl (\acc x -> x .|. (shiftL acc 8)) 0) $ ( foldl' (\acc x -> if ( (length $ head acc)>3) then [x]:acc else ( x:(head acc)):(tail acc)) [[]] $ map fromIntegral floorLis)

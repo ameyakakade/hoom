@@ -12,9 +12,9 @@ import qualified Data.Vector.Storable as VS
 import qualified Data.Word as W
 
 width :: Int 
-width  = div sWidth 1
+width  = div sWidth 2
 height :: Int
-height = div sHeight 1
+height = div sHeight 2
 
 sWidth :: Int
 sWidth = 1600
@@ -25,16 +25,16 @@ cellSize :: Int
 cellSize = 20
 
 fov :: Float
-fov = pi/3
+fov = pi/2.0
 planeEnds = collisionDistance * (tan (fov/2))
 heightFactor :: Float
-heightFactor = (fromIntegral width)/(fromIntegral height)
+heightFactor = 1
 
 textureSize :: Float
 textureSize = 256
 
 collisionDistance :: Float
-collisionDistance = 0.1
+collisionDistance = 0.05
 
 acceleration :: Float
 acceleration = 0.2 -- in blocks per sec
