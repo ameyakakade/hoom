@@ -75,14 +75,8 @@ mainLoop (state, window) =
 
         -- add acceleration and deceleration
         let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) angle
-        let velocityDelta = ((vectorNormalize velocityDir) |* acceleration) |-| (velocityOld |* deceleration )
-        let velocityA = velocityOld + velocityDelta
-        let velocityCollision = checkCollision scene velocityA positionOld
-        let velocityB = velocityA |+| velocityCollision
-        let mag = magnitude velocityA
-        let velocity | mag > maxSpeed = ((vectorNormalize velocityB) |* maxSpeed)
-                     | otherwise = velocityB
-
+        let velocity = updateVelocity velocityOld velocityDir positionOld scene
+        
         let position = positionOld |+| (velocity |* time)
         
      -- setTargetFPS 60

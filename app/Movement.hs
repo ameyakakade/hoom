@@ -1,11 +1,21 @@
 {-# LANGUAGE PatternSynonyms #-}
-module Movement (checkCollision) where 
+module Movement (updateVelocity) where 
 
 import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y)
 
 import Constants
 import Raystep(getWallIDVec2)
+
+updateVelocity :: Vector2 -> Vector2 -> Vector2 -> Scene -> Vector2
+updateVelocity velocityOld velocityDir positionOld scene = velocity
+  where velocityDelta = ((vectorNormalize velocityDir) |* acceleration) |-| (velocityOld |* deceleration )
+        velocityA = velocityOld + velocityDelta
+        velocityCollision = checkCollision scene velocityA positionOld
+        velocityB = velocityA |+| velocityCollision
+        mag = magnitude velocityA
+        velocity | mag > maxSpeed = ((vectorNormalize velocityB) |* maxSpeed)
+                 | otherwise = velocityB
 
 checkCollision :: Scene -> Vector2 -> Vector2 -> Vector2
 checkCollision scene velocity position = 

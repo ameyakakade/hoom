@@ -49,16 +49,16 @@ drawCellsHelper list x y
 
 drawRows :: Int -> IO ()
 drawRows h 
-    | h < height = (do 
-                drawLine 0 h width h lightGray
+    | h < sHeight = (do 
+                drawLine 0 h sWidth h lightGray
                 drawRows ( h + (cellSize) )
               )
     | otherwise = return ()
 
 drawCols :: Int -> IO ()
 drawCols w 
-    | w < width = (do 
-                drawLine w 0 w height lightGray
+    | w < sWidth = (do 
+                drawLine w 0 w sHeight lightGray
                 drawCols ( w + (cellSize) )
               ) | otherwise = return ()
 
