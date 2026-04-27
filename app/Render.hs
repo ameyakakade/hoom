@@ -6,7 +6,7 @@ import Raylib.Core.Shapes (drawRectangle)
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Textures (loadTexture, drawTexturePro, updateTexture)
 import Raylib.Util(textureMode)
-import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate, vectorLerp, magnitude)
+import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate, vectorLerp, magnitude, lerp, clamp)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, renderTexture'texture
                     ,Color (Color) ,Texture, Rectangle, pattern Rectangle)
 import Raylib.Util.Colors (red)
@@ -15,6 +15,7 @@ import qualified Data.Vector.Storable as VS
 import qualified Data.Word as W
 import qualified Foreign.ForeignPtr as P
 import qualified Foreign.Ptr as PP
+import Data.List
 
 import Constants
 import Raystep
@@ -36,7 +37,18 @@ drawScene scene position angle textures floorTex canvas = do
     let right = position |+| vector2Rotate (Vector2 collisionDistance ( planeEnds) ) angle
     zBuf <- drawBars scene position left right angle 0 textures
 
-    drawSprites position left right angle textures
+    let sprites = [ (Vector2 2.0 3.0),
+                    (Vector2 10.0 30.0),
+                    (Vector2 8.3 15.0),
+                    (Vector2 12.3 30.0),
+                    (Vector2 13.3 3.0),
+                    (Vector2 20.3 31.0),
+                    (Vector2 15.0 2.0),
+                    (Vector2 5.0 30.0),
+                    (Vector2 20.0 20.0),
+                    (Vector2 9.3 9.0)]
+
+    drawSprites sprites zBuf position angle textures
 
     return ()
                      )
@@ -125,33 +137,56 @@ drawSkybox angle textures = do
   drawTexturePro sky textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
   return ()
 
-drawSprites :: Vector2 -> Vector2 -> Vector2 -> Float -> Textures -> IO ()
-drawSprites position leftV rightV angle textures = do
-  let sprite = textures !! 2
-  let playerDir = vector2Rotate (Vector2 1.0 0.0) angle
-  let spritePos = Vector2 10.0 10.0
-  let poi = spritePos |-| position
-  let distance = playerDir |.| poi
-  let dist = (collisionDistance /) $ (/(magnitude poi)) $ distance
-  let angledRay = position |+| ((vectorNormalize poi) |* dist)
 
-  let ar1 = vector2'x angledRay
-  let ar2 = vector2'y angledRay
-  let l1  = vector2'x leftV
-  let l2  = vector2'y leftV
-  let r1  = vector2'x rightV
-  let r2  = vector2'y rightV
+drawSprites :: [Vector2] -> [Float] -> Vector2 -> Float -> Textures -> IO ()
+drawSprites sprites zBuf position angle textures = do
+  let sprite    = textures !! 7
 
-  let t1 = (ar1-l1)/(r1-l1)
-  let t2 = (ar2-l2)/(r2-l2)
+  let spriteList = sortBy (\(d1, _, _) (d2, _, _) -> compare d2 d1 ) $ map (\spPos -> getXandDist position angle spPos) sprites
+  let fn = \(distance, xL, xR) -> drawSpriteHelper sprite zBuf distance xL xR
+
+  sequence $ map fn spriteList
+  return ()
+
+drawSpriteHelper sprite zBuf distance xL xR = if(distance>0 && xL>=0 && xR>=0)
+                   then drawBarSprites distance xL xL xR zBuf sprite
+                   else return ()
   
-  let heightR = (1/distance)*(fromIntegral height)*heightFactor
-  let x = t1*(fromIntegral width)
 
-  let drawingRect = Rectangle (x-(heightR/2)) (((fromIntegral height)/2) - (heightR/2)) heightR heightR 
-  let textureRect = Rectangle 0 0 256 256
 
-  if ((t1<1.0) && (t1>0.0)) then drawTexturePro sprite textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255) else return ()
-  
-  drawText (show t1) 30 80 40 red
-  drawText (show t2) 30 120 40 red
+drawBarSprites :: Float -> Float -> Float -> Float -> [Float] -> Texture -> IO ()
+drawBarSprites distance x xL xR zBuf texture
+  | x <= xR = do
+      if (distance < (zBuf !! (floor $ clamp 0.0 (fromIntegral width) x)))
+        then
+        drawTexturePro texture textureRect drawingRect (Vector2 0.0 0.0) 0.0 color
+        else return ()
+      drawBarSprites distance (x + deltaRes) xL xR zBuf texture
+  | otherwise = return ()
+  where heightR = (1/distance)*(fromIntegral height)*heightFactor
+        color = Color 255 255 255 c
+        c = floor $ min ( ((20/distance)^2)*255 ) 255 
+        drawingRect = Rectangle (x) (((fromIntegral height)/2) - (heightR/2)) deltaRes heightR 
+        textureRect = Rectangle (xinterp*textureSize) 0 deltaRes textureSize
+        xinterp = (xR - x)/(xR-xL)
+        deltaRes = 0.5
+
+getXandDist position angle spritePos = (distance, xL, xR)
+ where poi = spritePos - position
+       distance = playerDir |.| poi
+       leftV  = position |+| vector2Rotate (Vector2 collisionDistance (-planeEnds) ) angle
+       rightV = position |+| vector2Rotate (Vector2 collisionDistance ( planeEnds) ) angle
+       playerDir = vector2Rotate (Vector2 1.0 0.0) angle
+       dist = (collisionDistance /) $ (/(magnitude poi)) $ distance
+       angledRay = position |+| ((vectorNormalize poi) |* dist)
+
+       ar1 = vector2'x angledRay
+       l1  = vector2'x leftV
+       r1  = vector2'x rightV
+
+       t1 = (ar1-l1)/(r1-l1)
+       
+       heightR = (1/distance)*(fromIntegral height)*heightFactor
+       x = t1*(fromIntegral width)
+       xL = x - (heightR/2)
+       xR = x + (heightR/2)

@@ -46,6 +46,7 @@ drawMap scene position angle = do
 
   let t = (vectorDistance angledRay left) / (vectorDistance right left)
 
+  strokeLine position sprite 
   drawCircleOnGrid angledRay
   drawText (show t) 30 70 40 red
 
