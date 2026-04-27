@@ -15,19 +15,42 @@ import qualified Data.Vector.Unboxed as V
 import Constants
 import Raystep
 
-drawMap :: Scene -> Vector2 -> IO ()
-drawMap scene position = do
-        clearBackground black
-        drawGrid 
-        drawCells scene 0
-        mousePos <- getMousePosition
-        let mousePosN = mousePos |/ fromIntegral cellSize
-        let (wall, wallID) = rayStep scene position mousePosN
-        strokeLine position wall 
-        drawCircleOnGrid mousePosN
-        drawCircleOnGrid position
-        drawCircleOnGrid wall
-        drawGrid :: IO ()
+drawMap :: Scene -> Vector2 -> Float -> IO ()
+drawMap scene position angle = do
+  clearBackground black
+  drawGrid 
+  drawCells scene 0
+  mousePos <- getMousePosition
+  let mousePosN = mousePos |/ fromIntegral cellSize
+  -- let (wall, wallID) = rayStep scene position mousePosN
+  -- strokeLine position wall 
+  -- drawCircleOnGrid mousePosN
+  drawCircleOnGrid position
+  -- drawCircleOnGrid wall
+
+  -- trying to visualise sprite rendering
+  let sprite = Vector2 10.0 10.0
+  drawCircleOnGrid sprite
+
+  let left  = position |+| vector2Rotate (Vector2 collisionDistance (-planeEnds) ) angle
+  let right = position |+| vector2Rotate (Vector2 collisionDistance ( planeEnds) ) angle
+
+  strokeLine position left 
+  strokeLine position right 
+  strokeLine left right
+
+  let playerDir = vector2Rotate (Vector2 1.0 0.0) angle
+  let poi = sprite |-| position
+  let dist = (collisionDistance /) $ (/(magnitude poi)) $ playerDir |.| poi
+  let angledRay = position |+| (vectorNormalize poi) |* dist
+
+  let t = (vectorDistance angledRay left) / (vectorDistance right left)
+
+  drawCircleOnGrid angledRay
+  drawText (show t) 30 70 40 red
+
+  drawGrid :: IO ()
+
 drawGrid = do
             drawRows 0
             drawCols 0

@@ -22,7 +22,7 @@ sHeight :: Int
 sHeight = 900
 
 cellSize :: Int
-cellSize = 20
+cellSize = 25
 
 fov :: Float
 fov = pi/2.0

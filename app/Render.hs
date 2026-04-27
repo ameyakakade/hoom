@@ -3,11 +3,13 @@ module Render (drawScene) where
 
 import Raylib.Core (clearBackground)
 import Raylib.Core.Shapes (drawRectangle)
+import Raylib.Core.Text (drawText)
 import Raylib.Core.Textures (loadTexture, drawTexturePro, updateTexture)
 import Raylib.Util(textureMode)
-import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate, vectorLerp)
+import Raylib.Util.Math(Vector(..), vectorNormalize, vectorDistance, vector2Rotate, vectorLerp, magnitude)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, renderTexture'texture
                     ,Color (Color) ,Texture, Rectangle, pattern Rectangle)
+import Raylib.Util.Colors (red)
 
 import qualified Data.Vector.Storable as VS
 import qualified Data.Word as W
@@ -26,11 +28,16 @@ drawScene :: Scene -> Vector2 -> Float -> Textures -> FloorTex -> Canvas -> IO (
 drawScene scene position angle textures floorTex canvas = do
   textureMode canvas (do
     clearBackground (Color 70 100 150 255)
+
     drawSkybox angle textures
     drawFloor position angle textures floorTex
+
     let left  = position |+| vector2Rotate (Vector2 collisionDistance (-planeEnds) ) angle
     let right = position |+| vector2Rotate (Vector2 collisionDistance ( planeEnds) ) angle
     zBuf <- drawBars scene position left right angle 0 textures
+
+    drawSprites position left right angle textures
+
     return ()
                      )
   drawTexturePro (renderTexture'texture canvas) (Rectangle 0 0 (fromIntegral width) (-(fromIntegral height)) ) (Rectangle 0 0 (fromIntegral sWidth) (fromIntegral sHeight)) (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
@@ -108,20 +115,6 @@ yToDist :: Int -> Float
 yToDist y = ( ((fromIntegral texH)*heightFactor*) $ (1/) $ yy ) :: Float
   where yy = fromIntegral y
 
--- drawFloorHelper :: Vector2 -> Float -> Int -> Textures -> IO ()
--- drawFloorHelper position angle screenY textures
---   | screenY > (div height 2) = do
-
---       drawFloorHelper position angle (screenY-(floor deltaRes)) textures
---   | otherwise = return ()
---   where color = Color c c c cd
---         c = floor $ interp*100
---         cd = floor $ min ( ((40/distance)^2)*255 ) 255 
---         interp = (fromIntegral screenY)/(fromIntegral height)
---         deltaRes = 1.0
---         x = vector2'x position
---         y = vector2'y position
-
 drawSkybox :: Float -> Textures -> IO ()
 drawSkybox angle textures = do
   let sky = textures !! 6
@@ -132,4 +125,33 @@ drawSkybox angle textures = do
   drawTexturePro sky textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
   return ()
 
-  -- a b g r
+drawSprites :: Vector2 -> Vector2 -> Vector2 -> Float -> Textures -> IO ()
+drawSprites position leftV rightV angle textures = do
+  let sprite = textures !! 2
+  let playerDir = vector2Rotate (Vector2 1.0 0.0) angle
+  let spritePos = Vector2 10.0 10.0
+  let poi = spritePos |-| position
+  let distance = playerDir |.| poi
+  let dist = (collisionDistance /) $ (/(magnitude poi)) $ distance
+  let angledRay = position |+| ((vectorNormalize poi) |* dist)
+
+  let ar1 = vector2'x angledRay
+  let ar2 = vector2'y angledRay
+  let l1  = vector2'x leftV
+  let l2  = vector2'y leftV
+  let r1  = vector2'x rightV
+  let r2  = vector2'y rightV
+
+  let t1 = (ar1-l1)/(r1-l1)
+  let t2 = (ar2-l2)/(r2-l2)
+  
+  let heightR = (1/distance)*(fromIntegral height)*heightFactor
+  let x = t1*(fromIntegral width)
+
+  let drawingRect = Rectangle (x-(heightR/2)) (((fromIntegral height)/2) - (heightR/2)) heightR heightR 
+  let textureRect = Rectangle 0 0 256 256
+
+  if ((t1<1.0) && (t1>0.0)) then drawTexturePro sprite textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255) else return ()
+  
+  drawText (show t1) 30 80 40 red
+  drawText (show t2) 30 120 40 red

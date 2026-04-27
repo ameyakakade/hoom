@@ -76,11 +76,8 @@ mainLoop (state, window) =
         -- add acceleration and deceleration
         let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) angle
         let velocity = updateVelocity velocityOld velocityDir positionOld scene
-        
-        let position = positionOld |+| (velocity |* time)
-        
-     -- setTargetFPS 60
-        if isMDown then drawMap scene position else drawScene scene position angle textures floorTex canvas
+        let position = positionOld |+| (velocity |* time) -- setTargetFPS 60
+        if (isMDown) then drawMap scene position angle else drawScene scene position angle textures floorTex canvas
 
         fps <- getFPS
         drawText ("FPS: " ++ (show fps)) 30 40 30 red
