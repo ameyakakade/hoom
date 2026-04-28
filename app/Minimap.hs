@@ -15,7 +15,7 @@ import qualified Data.Vector.Unboxed as V
 import Constants
 import Raystep
 
-drawMap :: Scene -> Vector2 -> Float -> IO ()
+drawMap :: Walls -> Vector2 -> Float -> IO ()
 drawMap scene position angle = do
   clearBackground black
   drawGrid 
@@ -56,7 +56,7 @@ drawGrid = do
             drawRows 0
             drawCols 0
 
-drawCells :: Scene -> Int -> IO ()
+drawCells :: Walls -> Int -> IO ()
 drawCells (x,y,list) no
   | list == V.empty = return ()
   | otherwise = do

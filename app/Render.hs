@@ -26,7 +26,7 @@ texH = div height 2
 type FloorPos = VS.Vector Vector2
 
 drawScene :: Scene -> Vector2 -> Float -> Textures -> FloorTex -> Canvas -> IO ()
-drawScene scene position angle textures floorTex canvas = do
+drawScene (scene, floors, sprites) position angle textures floorTex canvas = do
   textureMode canvas (do
     clearBackground (Color 70 100 150 255)
 
@@ -37,16 +37,6 @@ drawScene scene position angle textures floorTex canvas = do
     let right = position |+| vector2Rotate (Vector2 collisionDistance ( planeEnds) ) angle
     zBuf <- drawBars scene position left right angle 0 textures
 
-    let sprites = [ (Vector2 2.0 3.0),
-                    (Vector2 10.0 30.0),
-                    (Vector2 8.3 15.0),
-                    (Vector2 12.3 30.0),
-                    (Vector2 13.3 3.0),
-                    (Vector2 20.3 31.0),
-                    (Vector2 15.0 2.0),
-                    (Vector2 5.0 30.0),
-                    (Vector2 20.0 20.0),
-                    (Vector2 9.3 9.0)]
 
     drawSprites sprites zBuf position angle textures
 
@@ -55,7 +45,7 @@ drawScene scene position angle textures floorTex canvas = do
   drawTexturePro (renderTexture'texture canvas) (Rectangle 0 0 (fromIntegral width) (-(fromIntegral height)) ) (Rectangle 0 0 (fromIntegral sWidth) (fromIntegral sHeight)) (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
 
 
-drawBars :: Scene -> Vector2 -> Vector2 -> Vector2 -> Float -> Int -> Textures -> IO [Float]
+drawBars :: Walls -> Vector2 -> Vector2 -> Vector2 -> Float -> Int -> Textures -> IO [Float]
 drawBars scene origin left right angle screenX textures
   | screenX <= width = do
                  -- strokeLine origin wall
@@ -68,7 +58,7 @@ drawBars scene origin left right angle screenX textures
           | otherwise = Color 255 255 255 c
         c = floor $ min ( ((20/distance)^2)*255 ) 255 
         drawingRect = Rectangle (fromIntegral screenX) ( ((fromIntegral height) - (heightR))/2 ) deltaRes heightR
-        textureRect = Rectangle (interp*textureSize) 0 deltaRes textureSize
+        textureRect = Rectangle (fromIntegral $ floor $ interp*textureSize) 0 deltaRes textureSize
         distance = (wall |-| origin) |.| vector2Rotate (Vector2 1.0 0.0) angle
         interp = max x y
         x = snd . properFraction $ vector2'x wall

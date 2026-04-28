@@ -31,13 +31,21 @@ import ParseLevel
 startup :: IO AppState 
 startup = do 
   window <- initWindow sWidth sHeight "Hoom"
-  let texturePaths = ["textures/wall1.png", "textures/wall2.png", "textures/wall3.png", "textures/wall4.png", "textures/error.png", "textures/sky.png", "textures/pillar.png"]
+  disableCursor
+  state <- load
+  return (0, state, window)
+
+boolToNum :: (Num a) => Bool -> a
+boolToNum b = if b then 1 else 0
+
+load = do
+  let texturePaths = ["textures/pics/bluestone.png", "textures/pics/colorstone.png", "textures/pics/mossy.png", "textures/pics/wood.png", "textures/error.png", "textures/sky.png", "textures/barrela.png"]
   floorCanvas <- loadRenderTexture width (div height 2)
   loadedTexturesA <- sequence $ map loadTexture texturePaths
   let loadedTextures = (renderTexture'texture floorCanvas):loadedTexturesA
   
-  disableCursor
 
+  let floorTexturePaths = ["textures/Ground.png"]
   floorImg <- loadImage "textures/Ground.png"
   let floorLis = image'data floorImg
   -- converting a image which is [Word8] into vector of word32 in abgr format
@@ -51,16 +59,16 @@ startup = do
 
   canvas <- loadRenderTexture width height
 
-  return ( (levelData, playerData, loadedTextures, floorTex, canvas) , window)
-
-boolToNum :: (Num a) => Bool -> a
-boolToNum b = if b then 1 else 0
+  return (levelData, playerData, loadedTextures, floorTex, canvas)
 
 mainLoop :: AppState -> IO AppState
-mainLoop (state, window) =
-  drawing
+mainLoop (view, state, window)
+  | view == 0 = gameView view state window
+  | otherwise = undefined
+
+gameView view state window = drawing
     ( do
-        let (scene, (positionOld, velocityOld, angleOld), textures, floorTex, canvas) = state
+        let ((scene, floors, stsp), (positionOld, velocityOld, angleOld), textures, floorTex, canvas) = state
         isMDown <- isKeyDown KeyM
         
         xOffset1 <- fmap boolToNum (isKeyDown KeyW)
@@ -77,19 +85,19 @@ mainLoop (state, window) =
         let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) angle
         let velocity = updateVelocity velocityOld velocityDir positionOld scene
         let position = positionOld |+| (velocity |* time) -- setTargetFPS 60
-        if (isMDown) then drawMap scene position angle else drawScene scene position angle textures floorTex canvas
+
+        if (isMDown) then drawMap scene position angle else drawScene (scene, floors, stsp) position angle textures floorTex canvas
 
         fps <- getFPS
         drawText ("FPS: " ++ (show fps)) 30 40 30 red
 
-        return ( (scene, (position, velocity, angle), textures, floorTex, canvas), window)
+        return (view, ( (scene, floors, stsp), (position, velocity, angle), textures, floorTex, canvas), window)
     )
-
 
 shouldClose :: AppState -> IO Bool
 shouldClose _ = windowShouldClose
 
 teardown :: AppState -> IO ()
-teardown (_, win)= closeWindow . Just $ win
+teardown (_, _, win)= closeWindow . Just $ win
 
 $(raylibApplication 'startup 'mainLoop 'shouldClose 'teardown)

@@ -2,6 +2,7 @@
 module Constants (width, height, cellSize, planeEnds, textureSize, sWidth, sHeight
                  ,collisionDistance, acceleration, heightFactor, fi
                  ,deceleration, maxSpeed, fov, Textures, State, Canvas
+                 ,Walls, Floors, StaticSprites
                  ,AppState, Scene, Player, FloorTex) where
 
 import Raylib.Util (WindowResources)
@@ -31,7 +32,7 @@ heightFactor :: Float
 heightFactor = 1
 
 textureSize :: Float
-textureSize = 256
+textureSize = 64
 
 collisionDistance :: Float
 collisionDistance = 0.05
@@ -46,13 +47,21 @@ maxSpeed :: Float
 maxSpeed = 5.0 -- in blocks per sec
 
 type Textures = [Texture]
-type Canvas = RenderTexture2D
 type FloorTex = VS.Vector W.Word32
-  --          position speed angle
+type FloorTextures = [FloorTex]
+type Sprites = [Texture]
+type Canvas = RenderTexture2D
+
+           -- position speed angle
 type Player = (Vector2, Vector2, Float)
+
            -- level  player  textures
+type Walls = (Int, Int, V.Vector Int)
+type Floors = (Int, Int, V.Vector Int)
+type StaticSprites = [Vector2]
+type Scene = (Walls, Floors, StaticSprites)
+
 type State = (Scene, Player, Textures, FloorTex, Canvas)
-type Scene = (Int, Int, V.Vector Int)
-type AppState = (State, WindowResources)
+type AppState = (Int, State, WindowResources)
 
 fi = fromIntegral

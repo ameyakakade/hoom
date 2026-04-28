@@ -7,7 +7,7 @@ import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y)
 import Constants
 import Raystep(getWallIDVec2)
 
-updateVelocity :: Vector2 -> Vector2 -> Vector2 -> Scene -> Vector2
+updateVelocity :: Vector2 -> Vector2 -> Vector2 -> Walls -> Vector2
 updateVelocity velocityOld velocityDir positionOld scene = velocity
   where velocityDelta = ((vectorNormalize velocityDir) |* acceleration) |-| (velocityOld |* deceleration )
         velocityA = velocityOld + velocityDelta
@@ -17,7 +17,7 @@ updateVelocity velocityOld velocityDir positionOld scene = velocity
         velocity | mag > maxSpeed = ((vectorNormalize velocityB) |* maxSpeed)
                  | otherwise = velocityB
 
-checkCollision :: Scene -> Vector2 -> Vector2 -> Vector2
+checkCollision :: Walls -> Vector2 -> Vector2 -> Vector2
 checkCollision scene velocity position = 
   Vector2 cvx cvy
   where cvx
