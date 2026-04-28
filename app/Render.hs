@@ -12,6 +12,7 @@ import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, renderTextu
 import Raylib.Util.Colors (red)
 
 import qualified Data.Vector.Storable as VS
+import qualified Data.Vector.Unboxed as V
 import qualified Data.Word as W
 import qualified Foreign.ForeignPtr as P
 import qualified Foreign.Ptr as PP
@@ -29,7 +30,7 @@ drawScene (scene, floors, sprites) position angle (wallTex, floorTex, floorCanva
     clearBackground (Color 70 100 150 255)
 
     drawSkybox angle wallTex
-    drawFloor position angle floorTex floorCanvas
+    drawFloor position angle floors floorTex floorCanvas
 
     let left  = position |+| vector2Rotate (Vector2 collisionDistance (-planeEnds) ) angle
     let right = position |+| vector2Rotate (Vector2 collisionDistance ( planeEnds) ) angle
@@ -66,12 +67,12 @@ drawBars scene origin left right angle screenX textures
         xinterp = (fromIntegral screenX)/(fromIntegral width)
         deltaRes = 1.0
 
-drawFloor :: Vector2 -> Float -> FloorTextures -> FloorCanvas -> IO ()
-drawFloor position angle floorTex floorCanvas = do 
+drawFloor :: Vector2 -> Float -> Floors -> FloorTextures -> FloorCanvas -> IO ()
+drawFloor position angle floors floorTex floorCanvas = do 
 
   let (leftPos, rightPos) = createPosArrays position angle
   
-  let fun = fn floorTex leftPos rightPos
+  let fun = fn floors floorTex leftPos rightPos
   let a = VS.generate (texW*texH) fun
   let (p, offset, len) = VS.unsafeToForeignPtr a
   let vp = P.castForeignPtr p :: P.ForeignPtr ()
@@ -87,8 +88,8 @@ drawFloor position angle floorTex floorCanvas = do
 
 type FloorPos = VS.Vector Vector2
 
-fn :: FloorTextures -> FloorPos -> FloorPos -> Int -> W.Word32
-fn floorTextures leftPos rightPos i 
+fn :: Floors -> FloorTextures -> FloorPos -> FloorPos -> Int -> W.Word32
+fn floors floorTextures leftPos rightPos i 
   | 0 == 0 = (VS.!) floorTex (tx + ty*512)
   | otherwise = 4278295360
   where x = mod i texW
@@ -100,9 +101,14 @@ fn floorTextures leftPos rightPos i
         leftV = leftPos VS.! y
         rightV = rightPos VS.! y
         pos = (vectorLerp leftV rightV ( (fromIntegral x)/(fromIntegral texW) ))
-        floorTex = floorTextures !! 0
+        floorTex = floorTextures !! id'
+        id' = getFloorID floors (floor $ vector2'y pos) (floor $ vector2'x pos)
 
-fovScaling = 1/(cos (fov/2))
+getFloorID :: Floors -> Int -> Int -> Int
+getFloorID (cols, rows, floors) y x 
+  | y < 0 || x < 0 = 0
+  | y >= cols || x >= rows = 0
+  | otherwise = floors V.! (rows*y + x) 
 
 createPosArrays :: Vector2 -> Float -> (FloorPos, FloorPos)
 createPosArrays position angle = tLtV $ distToEnds $ map (*fovScaling) $ map yToDist [0..texH]
@@ -112,6 +118,8 @@ createPosArrays position angle = tLtV $ distToEnds $ map (*fovScaling) $ map yTo
         distToEndsR = \dist -> position + rightV|*dist
         distToEnds = \distL -> (map distToEndsL distL, map distToEndsR distL)
         tLtV = \(l, r) -> (VS.fromList l, VS.fromList r)
+
+fovScaling = 1/(cos (fov/2))
 
 yToDist :: Int -> Float
 yToDist y = ( ((fromIntegral texH)*heightFactor*) $ (1/) $ yy ) :: Float
