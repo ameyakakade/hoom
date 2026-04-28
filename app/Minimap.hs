@@ -52,6 +52,7 @@ drawMap (scene,_,_) position angle = do
 
   drawGrid :: IO ()
 
+drawGrid :: IO ()
 drawGrid = do
             drawRows 0
             drawCols 0

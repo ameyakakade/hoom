@@ -4,12 +4,12 @@
 
 
 $
+textures/sky.png
 textures/pics/bluestone.png
 textures/pics/colorstone.png
 textures/pics/mossy.png
 textures/pics/redbrick.png
 textures/error.png
-textures/sky.png
 textures/adi.png
 +
 textures/Ground.png

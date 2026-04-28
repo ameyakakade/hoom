@@ -23,27 +23,27 @@ import Raystep
 texW = width
 texH = div height 2
 
-drawScene :: Scene -> Vector2 -> Float -> Textures -> FloorTex -> Canvas -> IO ()
-drawScene (scene, floors, sprites) position angle textures floorTex canvas = do
+drawScene :: Scene -> Vector2 -> Float -> Textures -> Canvas -> IO ()
+drawScene (scene, floors, sprites) position angle (wallTex, floorTex, floorCanvas, spriteTex) canvas = do
   textureMode canvas (do
     clearBackground (Color 70 100 150 255)
 
-    drawSkybox angle textures
-    drawFloor position angle textures floorTex
+    drawSkybox angle wallTex
+    drawFloor position angle floorTex floorCanvas
 
     let left  = position |+| vector2Rotate (Vector2 collisionDistance (-planeEnds) ) angle
     let right = position |+| vector2Rotate (Vector2 collisionDistance ( planeEnds) ) angle
-    zBuf <- drawBars scene position left right angle 0 textures
+    zBuf <- drawBars scene position left right angle 0 wallTex
 
 
-    drawSprites sprites zBuf position angle textures
+    drawSprites sprites zBuf position angle spriteTex
 
     return ()
                      )
   drawTexturePro (renderTexture'texture canvas) (Rectangle 0 0 (fromIntegral width) (-(fromIntegral height)) ) (Rectangle 0 0 (fromIntegral sWidth) (fromIntegral sHeight)) (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
 
 
-drawBars :: Walls -> Vector2 -> Vector2 -> Vector2 -> Float -> Int -> Textures -> IO [Float]
+drawBars :: Walls -> Vector2 -> Vector2 -> Vector2 -> Float -> Int -> WallTextures -> IO [Float]
 drawBars scene origin left right angle screenX textures
   | screenX <= width = do
                  -- strokeLine origin wall
@@ -66,14 +66,13 @@ drawBars scene origin left right angle screenX textures
         xinterp = (fromIntegral screenX)/(fromIntegral width)
         deltaRes = 1.0
 
-drawFloor :: Vector2 -> Float -> Textures -> FloorTex -> IO ()
-drawFloor position angle textures floorTex = do 
+drawFloor :: Vector2 -> Float -> FloorTextures -> FloorCanvas -> IO ()
+drawFloor position angle floorTex floorCanvas = do 
 
   let (leftPos, rightPos) = createPosArrays position angle
   
   let fun = fn floorTex leftPos rightPos
   let a = VS.generate (texW*texH) fun
-  let floorCanvas = textures !! 0
   let (p, offset, len) = VS.unsafeToForeignPtr a
   let vp = P.castForeignPtr p :: P.ForeignPtr ()
   let h2 = (fromIntegral height)/2
@@ -88,8 +87,8 @@ drawFloor position angle textures floorTex = do
 
 type FloorPos = VS.Vector Vector2
 
-fn :: FloorTex -> FloorPos -> FloorPos -> Int -> W.Word32
-fn floorTex leftPos rightPos i 
+fn :: FloorTextures -> FloorPos -> FloorPos -> Int -> W.Word32
+fn floorTextures leftPos rightPos i 
   | 0 == 0 = (VS.!) floorTex (tx + ty*512)
   | otherwise = 4278295360
   where x = mod i texW
@@ -101,6 +100,7 @@ fn floorTex leftPos rightPos i
         leftV = leftPos VS.! y
         rightV = rightPos VS.! y
         pos = (vectorLerp leftV rightV ( (fromIntegral x)/(fromIntegral texW) ))
+        floorTex = floorTextures !! 0
 
 fovScaling = 1/(cos (fov/2))
 
@@ -117,9 +117,9 @@ yToDist :: Int -> Float
 yToDist y = ( ((fromIntegral texH)*heightFactor*) $ (1/) $ yy ) :: Float
   where yy = fromIntegral y
 
-drawSkybox :: Float -> Textures -> IO ()
+drawSkybox :: Float -> WallTextures -> IO ()
 drawSkybox angle textures = do
-  let sky = textures !! 6
+  let sky = textures !! 0
   let drawingRect = Rectangle 0 0 (fromIntegral width) ((fromIntegral height))
   let w = 1024/2
   let textureRect = Rectangle (angle*w/(2*pi)) 0 w 512
@@ -128,9 +128,9 @@ drawSkybox angle textures = do
   return ()
 
 
-drawSprites :: [Vector2] -> [Float] -> Vector2 -> Float -> Textures -> IO ()
+drawSprites :: [Vector2] -> [Float] -> Vector2 -> Float -> SpriteTextures -> IO ()
 drawSprites sprites zBuf position angle textures = do
-  let sprite    = textures !! 7
+  let sprite    = textures !! 0
 
   let spriteList = sortBy (\(d1, _, _) (d2, _, _) -> compare d2 d1 ) $ map (\spPos -> getXandDist position angle spPos) sprites
   let fn = \(distance, xL, xR) -> drawSpriteHelper sprite zBuf distance xL xR

@@ -47,7 +47,7 @@ mainLoop (view, state, window)
 gameView :: Int -> State -> WindowResources -> IO AppState
 gameView view state window = drawing
     ( do
-        let (scene, (positionOld, velocityOld, angleOld), textures, floorTex, canvas) = state
+        let (scene, (positionOld, velocityOld, angleOld), textures, canvas) = state
         let (walls, floors, sprites) = scene
         isMDown <- isKeyDown KeyM
         
@@ -66,12 +66,12 @@ gameView view state window = drawing
         let velocity = updateVelocity velocityOld velocityDir positionOld walls
         let position = positionOld |+| (velocity |* time) -- setTargetFPS 60
 
-        if (isMDown) then drawMap scene position angle else drawScene scene position angle textures floorTex canvas
+        if (isMDown) then drawMap scene position angle else drawScene scene position angle textures canvas
 
         fps <- getFPS
         drawText ("FPS: " ++ (show fps)) 30 40 30 red
 
-        return (view, (scene, (position, velocity, angle), textures, floorTex, canvas), window)
+        return (view, (scene, (position, velocity, angle), textures, canvas), window)
     )
 
 startView view state window = drawing
