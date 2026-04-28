@@ -32,43 +32,23 @@ startup :: IO AppState
 startup = do 
   window <- initWindow sWidth sHeight "Hoom"
   disableCursor
-  state <- load
+  state <- load "levels/level3.txt"
   return (0, state, window)
 
 boolToNum :: (Num a) => Bool -> a
 boolToNum b = if b then 1 else 0
 
-load = do
-  let texturePaths = ["textures/pics/bluestone.png", "textures/pics/colorstone.png", "textures/pics/mossy.png", "textures/pics/wood.png", "textures/error.png", "textures/sky.png", "textures/barrela.png"]
-  floorCanvas <- loadRenderTexture width (div height 2)
-  loadedTexturesA <- sequence $ map loadTexture texturePaths
-  let loadedTextures = (renderTexture'texture floorCanvas):loadedTexturesA
-  
-
-  let floorTexturePaths = ["textures/Ground.png"]
-  floorImg <- loadImage "textures/Ground.png"
-  let floorLis = image'data floorImg
-  -- converting a image which is [Word8] into vector of word32 in abgr format
-  let (floorTex) = VS.fromList $ map (foldl (\acc x -> x .|. (shiftL acc 8)) 0) $ ( foldl' (\acc x -> if ( (length $ head acc)>3) then [x]:acc else ( x:(head acc)):(tail acc)) [[]] $ map fromIntegral floorLis)
-
-  [filename] <- getArgs
-  levelHandle <- openFile filename ReadMode
-  contents <- hGetContents levelHandle
-
-  let (playerData, levelData) = parseLevel contents 
-
-  canvas <- loadRenderTexture width height
-
-  return (levelData, playerData, loadedTextures, floorTex, canvas)
-
 mainLoop :: AppState -> IO AppState
 mainLoop (view, state, window)
-  | view == 0 = gameView view state window
+  | view == 0 = startView view state window
+  | view == 1 = gameView view state window
   | otherwise = undefined
 
+gameView :: Int -> State -> WindowResources -> IO AppState
 gameView view state window = drawing
     ( do
-        let ((scene, floors, stsp), (positionOld, velocityOld, angleOld), textures, floorTex, canvas) = state
+        let (scene, (positionOld, velocityOld, angleOld), textures, floorTex, canvas) = state
+        let (walls, floors, sprites) = scene
         isMDown <- isKeyDown KeyM
         
         xOffset1 <- fmap boolToNum (isKeyDown KeyW)
@@ -83,16 +63,24 @@ gameView view state window = drawing
 
         -- add acceleration and deceleration
         let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) angle
-        let velocity = updateVelocity velocityOld velocityDir positionOld scene
+        let velocity = updateVelocity velocityOld velocityDir positionOld walls
         let position = positionOld |+| (velocity |* time) -- setTargetFPS 60
 
-        if (isMDown) then drawMap scene position angle else drawScene (scene, floors, stsp) position angle textures floorTex canvas
+        if (isMDown) then drawMap scene position angle else drawScene scene position angle textures floorTex canvas
 
         fps <- getFPS
         drawText ("FPS: " ++ (show fps)) 30 40 30 red
 
-        return (view, ( (scene, floors, stsp), (position, velocity, angle), textures, floorTex, canvas), window)
+        return (view, (scene, (position, velocity, angle), textures, floorTex, canvas), window)
     )
+
+startView view state window = drawing
+  ( do
+      drawText ("This is the start screen") 30 40 30 red
+      isMDown <- isKeyDown KeyM
+      let newView = if isMDown then 1 else 0
+      return (newView, state, window)
+  )
 
 shouldClose :: AppState -> IO Bool
 shouldClose _ = windowShouldClose

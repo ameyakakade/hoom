@@ -15,8 +15,8 @@ import qualified Data.Vector.Unboxed as V
 import Constants
 import Raystep
 
-drawMap :: Walls -> Vector2 -> Float -> IO ()
-drawMap scene position angle = do
+drawMap :: Scene -> Vector2 -> Float -> IO ()
+drawMap (scene,_,_) position angle = do
   clearBackground black
   drawGrid 
   drawCells scene 0

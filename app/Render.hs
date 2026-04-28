@@ -23,8 +23,6 @@ import Raystep
 texW = width
 texH = div height 2
 
-type FloorPos = VS.Vector Vector2
-
 drawScene :: Scene -> Vector2 -> Float -> Textures -> FloorTex -> Canvas -> IO ()
 drawScene (scene, floors, sprites) position angle textures floorTex canvas = do
   textureMode canvas (do
@@ -87,6 +85,8 @@ drawFloor position angle textures floorTex = do
 
 -- give this a array of start and end positions as vectors which it will read
 -- this function is like a shader
+
+type FloorPos = VS.Vector Vector2
 
 fn :: FloorTex -> FloorPos -> FloorPos -> Int -> W.Word32
 fn floorTex leftPos rightPos i 
