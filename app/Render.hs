@@ -148,7 +148,7 @@ drawSprites sprites zBuf position angle textures = do
   sequence $ map fn spriteList
   return ()
 
-drawSpriteHelper sprite zBuf distance xL xR = if(distance>0 && xL>=0 && xR>=0)
+drawSpriteHelper sprite zBuf distance xL xR = if(distance>0 && (xL>=0 || xR>=0))
                    then drawBarSprites distance xL xL xR zBuf sprite
                    else return ()
   
@@ -167,9 +167,9 @@ drawBarSprites distance x xL xR zBuf texture
         color = Color 255 255 255 c
         c = floor $ min ( ((20/distance)^2)*255 ) 255 
         drawingRect = Rectangle (x) (((fromIntegral height)/2) - (heightR/2)) deltaRes heightR 
-        textureRect = Rectangle (xinterp*textureSize) 0 deltaRes textureSize
+        textureRect = Rectangle (fromIntegral $ floor $ xinterp*textureSize) 0 deltaRes textureSize
         xinterp = (xR - x)/(xR-xL)
-        deltaRes = 0.5
+        deltaRes = 1
 
 getXandDist position angle spritePos = (distance, xL, xR)
  where poi = spritePos - position
@@ -188,5 +188,9 @@ getXandDist position angle spritePos = (distance, xL, xR)
        
        heightR = (1/distance)*(fromIntegral height)*heightFactor
        x = t1*(fromIntegral width)
-       xL = x - (heightR/2)
-       xR = x + (heightR/2)
+       xL1 = x - (heightR/2)
+       xR1 = x + (heightR/2)
+
+       (xL, xR) = if ( (xL1<0 && xR1<0) || (xL1>(fromIntegral width) && xR1>(fromIntegral width)) )
+         then (-1,-1)
+         else (xL1, xR1)

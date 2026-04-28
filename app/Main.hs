@@ -31,7 +31,7 @@ import ParseLevel
 startup :: IO AppState 
 startup = do 
   window <- initWindow sWidth sHeight "Hoom"
-  let texturePaths = ["textures/wall1.png", "textures/wall2.png", "textures/wall3.png", "textures/wall4.png", "textures/error.png", "textures/sky.png", "textures/adi.png"]
+  let texturePaths = ["textures/wall1.png", "textures/wall2.png", "textures/wall3.png", "textures/wall4.png", "textures/error.png", "textures/sky.png", "textures/pillar.png"]
   floorCanvas <- loadRenderTexture width (div height 2)
   loadedTexturesA <- sequence $ map loadTexture texturePaths
   let loadedTextures = (renderTexture'texture floorCanvas):loadedTexturesA
