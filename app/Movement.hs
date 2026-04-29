@@ -9,12 +9,12 @@ import Raystep(getWallIDVec2)
 
 updateVelocity :: Vector2 -> Vector2 -> Vector2 -> Walls -> Vector2
 updateVelocity velocityOld velocityDir positionOld scene = velocity
-  where velocityDelta = ((vectorNormalize velocityDir) |* acceleration) |-| (velocityOld |* deceleration )
-        velocityA = velocityOld + velocityDelta
+  where velocityDelta     = (vectorNormalize velocityDir |* acceleration) |-| (velocityOld |* deceleration )
+        velocityA         = velocityOld + velocityDelta
         velocityCollision = checkCollision scene velocityA positionOld
-        velocityB = velocityA |+| velocityCollision
-        mag = magnitude velocityA
-        velocity | mag > maxSpeed = ((vectorNormalize velocityB) |* maxSpeed)
+        velocityB         = velocityA |+| velocityCollision
+        mag               = magnitude velocityA
+        velocity | mag > maxSpeed = vectorNormalize velocityB |* maxSpeed
                  | otherwise = velocityB
 
 checkCollision :: Walls -> Vector2 -> Vector2 -> Vector2
@@ -28,9 +28,9 @@ checkCollision scene velocity position =
           | front /= 0 = if vely>0 then (-vely) else 0 
           | back  /= 0 = if vely<0 then (-vely) else 0
           | otherwise = 0
-        front = getWallIDVec2 scene $ (position |+| (Vector2 0   collisionDistance))
-        back  = getWallIDVec2 scene $ (position |+| (Vector2 0 (-collisionDistance)))
-        right = getWallIDVec2 scene $ (position |+| (Vector2   collisionDistance 0))
-        left  = getWallIDVec2 scene $ (position |+| (Vector2 (-collisionDistance) 0))
-        velx = vector2'x velocity
-        vely = vector2'y velocity
+        front = getWallIDVec2 scene (position |+| Vector2 0   collisionDistance)
+        back  = getWallIDVec2 scene (position |+| Vector2 0 (-collisionDistance))
+        right = getWallIDVec2 scene (position |+| Vector2   collisionDistance  0)
+        left  = getWallIDVec2 scene (position |+| Vector2 (-collisionDistance) 0)
+        velx  = vector2'x velocity
+        vely  = vector2'y velocity

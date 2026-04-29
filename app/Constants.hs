@@ -1,4 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
 module Constants (width, height, cellSize, planeEnds, textureSize, sWidth, sHeight
                  ,collisionDistance, acceleration, heightFactor
                  ,deceleration, maxSpeed, fov, Textures, State, Canvas, FloorCanvas
@@ -29,7 +28,7 @@ fov :: Float
 fov = pi/2.0
 
 planeEnds :: Float
-planeEnds = collisionDistance * (tan (fov/2))
+planeEnds = collisionDistance * tan (fov/2)
 heightFactor :: Float
 heightFactor = 1
 
@@ -48,12 +47,12 @@ deceleration = 0.02 -- in blocks per sec
 maxSpeed :: Float
 maxSpeed = 5.0 -- in blocks per sec
 
-type FloorTex = VS.Vector W.Word32
-type WallTextures = [Texture]
+type FloorTex       = VS.Vector W.Word32
+type WallTextures   = [Texture]
 type SpriteTextures = [Texture]
-type FloorTextures = [FloorTex]
-type FloorCanvas = Texture
-type Textures = (WallTextures, FloorTextures, FloorCanvas, SpriteTextures)
+type FloorTextures  = [FloorTex]
+type FloorCanvas    = Texture
+type Textures       = (WallTextures, FloorTextures, FloorCanvas, SpriteTextures)
   
 type Canvas = RenderTexture2D
 
@@ -61,10 +60,10 @@ type Canvas = RenderTexture2D
 type Player = (Vector2, Vector2, Float)
 
            -- level  player  textures
-type Walls = (Int, Int, V.Vector Int)
-type Floors = (Int, Int, V.Vector Int)
+type Walls         = (Int, Int, V.Vector Int)
+type Floors        = (Int, Int, V.Vector Int)
 type StaticSprites = [Vector2]
-type Scene = (Walls, Floors, StaticSprites)
+type Scene         = (Walls, Floors, StaticSprites)
 
-type State = (Scene, Player, Textures, Canvas)
+type State    = (Scene, Player, Textures, Canvas)
 type AppState = (Int, State, WindowResources)

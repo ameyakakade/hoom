@@ -2,7 +2,7 @@
 module ParseLevel (load) where
 
 import Raylib.Core.Textures (loadTexture, loadImage, loadRenderTexture)
-import Raylib.Types (Vector2, pattern Vector2, renderTexture'texture, image'data)
+import Raylib.Types (pattern Vector2, renderTexture'texture, image'data)
 
 import qualified Data.Vector.Unboxed as V
 import qualified Data.Vector.Storable as VS
@@ -18,10 +18,10 @@ load filename = do
 
   let (playerData, levelData, wallPaths, floorPaths, spritePaths) = parseLevel contents 
 
-  wallTextures   <- sequence $ map loadTexture wallPaths
-  floorTextures  <- sequence $ map loadRawImage floorPaths
-  floorCanvas    <- fmap renderTexture'texture $ loadRenderTexture width (div height 2)
-  spriteTextures <- sequence $ map loadTexture spritePaths
+  wallTextures   <- mapM loadTexture wallPaths
+  floorTextures  <- mapM loadRawImage floorPaths
+  floorCanvas    <- renderTexture'texture <$> loadRenderTexture width (div height 2)
+  spriteTextures <- mapM loadTexture spritePaths
 
   let loadedTextures = (wallTextures, floorTextures, floorCanvas, spriteTextures)
 
@@ -35,8 +35,16 @@ loadRawImage path = do
   floorImg <- loadImage path
   let floorLis = image'data floorImg
   -- converting a image which is [Word8] into vector of word32 in abgr format
-  let floorTex = VS.fromList $ map (foldl (\acc x -> x .|. (shiftL acc 8)) 0) $ ( foldl' (\acc x -> if ( (length $ head acc)>3) then [x]:acc else ( x:(head acc)):(tail acc)) [[]] $ map fromIntegral floorLis)
-  return (floorTex)
+  let floorTex = VS.fromList
+        $ map (foldl (\acc x -> x .|. shiftL acc 8) 0)
+            $  foldl'
+        (\acc x -> if length (head acc)>3 then
+                     [x]:acc
+                   else
+                     (x:head acc):tail acc )
+        [[]] $ map fromIntegral floorLis
+
+  return floorTex
 
 
 parseLevel :: String -> (Player, Scene, [String], [String], [String])
@@ -46,17 +54,17 @@ parseLevel input = ((Vector2 ppx ppy, Vector2 pvx pvy, angle), (walls, floors, s
 
         wall     = V.fromList wallsTemp
         wallsTemp :: [Int]
-        wallsTemp = map read $ concat $ map words wallData
-        wallsLevelA    = map words wallData
-        wallCols      = length wallsLevelA
-        wallRows      = length $ head wallsLevelA
+        wallsTemp   = map read $ concatMap words wallData
+        wallsLevelA = map words wallData
+        wallCols    = length wallsLevelA
+        wallRows    = length $ head wallsLevelA
 
         floor'     = V.fromList floorsTemp
         floorsTemp :: [Int]
-        floorsTemp = map read $ concat $ map words floorData
-        floorsLevelA    = map words floorData
-        floorCols      = length floorsLevelA
-        floorRows      = length $ head floorsLevelA
+        floorsTemp   = map read $ concatMap words floorData
+        floorsLevelA = map words floorData
+        floorCols    = length floorsLevelA
+        floorRows    = length $ head floorsLevelA
 
         [ppx,ppy,pvx,pvy,angle] = map read $ words $ unlines playerData
 
@@ -70,7 +78,10 @@ sphf l = Vector2 x y
   where [id, x, y] = map read $ words l
 
 splitOn :: (Eq a) => a -> [a] -> [[a]]
-splitOn delim list = foldr (splitOnHelper delim) [[]] list
+splitOn delim = foldr (splitOnHelper delim) [[]]
 
 splitOnHelper :: (Eq a) => a -> (a -> [[a]] -> [[a]])
-splitOnHelper delim = \x acc -> if (x==delim) then []:acc else (x : head acc):(tail acc) 
+splitOnHelper delim x acc = if x==delim then
+                              []:acc
+                            else
+                              (x : head acc):tail acc 

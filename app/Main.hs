@@ -3,18 +3,18 @@
 
 module Main where
 
-import Raylib.Core (initWindow, setTargetFPS
-                   ,getFPS, windowShouldClose, closeWindow
-                   ,getMouseDelta, isKeyDown
-                   ,disableCursor, getFrameTime)
+import Raylib.Core (initWindow, setTargetFPS ,getFPS, windowShouldClose
+                   ,closeWindow ,getMouseDelta, isKeyDown ,disableCursor
+                   ,getFrameTime)
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Textures (loadTexture, loadImage, loadRenderTexture)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
 import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate)
 import Raylib.Util.Colors (red)
-import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, renderTexture'texture
-                    ,KeyboardKey(KeyM), KeyboardKey(KeyW), KeyboardKey(KeyA)
-                    ,KeyboardKey(KeyS), KeyboardKey(KeyD), Image, image'data)
+import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
+                    ,renderTexture'texture ,KeyboardKey(KeyM)
+                    ,KeyboardKey(KeyW), KeyboardKey(KeyA) ,KeyboardKey(KeyS)
+                    ,KeyboardKey(KeyD), Image, image'data)
 
 import System.IO
 import System.Environment
@@ -63,20 +63,20 @@ gameView view state window = drawing
 
         -- add acceleration and deceleration
         let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) angle
-        let velocity = updateVelocity velocityOld velocityDir positionOld walls
-        let position = positionOld |+| (velocity |* time) -- setTargetFPS 60
+        let velocity    = updateVelocity velocityOld velocityDir positionOld walls
+        let position    = positionOld |+| (velocity |* time) -- setTargetFPS 60
 
-        if (isMDown) then drawMap scene position angle else drawScene scene position angle textures canvas
+        if isMDown then drawMap scene position angle else drawScene scene position angle textures canvas
 
         fps <- getFPS
-        drawText ("FPS: " ++ (show fps)) 30 40 30 red
+        drawText ("FPS: " ++ show fps) 30 40 30 red
 
         return (view, (scene, (position, velocity, angle), textures, canvas), window)
     )
 
 startView view state window = drawing
   ( do
-      drawText ("This is the start screen") 30 40 30 red
+      drawText "This is the start screen" 30 40 30 red
       isMDown <- isKeyDown KeyM
       let newView = if isMDown then 1 else 0
       return (newView, state, window)
