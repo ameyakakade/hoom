@@ -74,7 +74,7 @@ parseLevel input = ((Vector2 ppx ppy, Vector2 pvx pvy, angle), (walls, floors, s
 
         [wallPaths, floorPaths, spritePaths] = splitOn "+" paths
 
-sphf l = Vector2 x y
+sphf l = (floor id, Vector2 x y)
   where [id, x, y] = map read $ words l
 
 splitOn :: (Eq a) => a -> [a] -> [[a]]

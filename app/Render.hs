@@ -134,12 +134,12 @@ drawSkybox angle textures = do
   return ()
 
 
-drawSprites :: [Vector2] -> [Float] -> Vector2 -> Float -> SpriteTextures -> IO ()
+drawSprites :: StaticSprites -> [Float] -> Vector2 -> Float -> SpriteTextures -> IO ()
 drawSprites sprites zBuf position angle textures = do
   let sprite    = textures !! 0
 
-  let spriteList = sortBy (\(d1, _, _) (d2, _, _) -> compare d2 d1 ) $ map (getXandDist position angle) sprites
-  let fn (distance, xL, xR) = drawSpriteHelper sprite zBuf distance xL xR
+  let spriteList = sortBy (\(d1, _, _, _) (d2, _, _, _) -> compare d2 d1 ) $ map (getXandDist position angle) sprites
+  let fn (distance, xL, xR, id) = drawSpriteHelper (textures !! id) zBuf distance xL xR
 
   mapM_ fn spriteList
   return ()
@@ -167,7 +167,7 @@ drawBarSprites distance x xL xR zBuf texture
         xinterp = (xR - x)/(xR-xL)
         deltaRes = 1
 
-getXandDist position angle spritePos = (distance, xL, xR)
+getXandDist position angle (id, spritePos) = (distance, xL, xR, id)
  where poi = spritePos - position
        distance = playerDir |.| poi
        leftV  = position |+| vector2Rotate (Vector2 collisionDistance (-planeEnds) ) angle

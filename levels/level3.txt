@@ -9,14 +9,13 @@ textures/pics/bluestone.png
 textures/pics/colorstone.png
 textures/pics/mossy.png
 textures/pics/redbrick.png
-textures/error.png
-textures/adi.png
 +
 textures/Ground.png
 textures/wall2.png
 textures/wall2.png
 +
 textures/barrela.png
+textures/pillara.png
 $
 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 1 0 0 0 0 0 0 0 3 0 0 0 0 0 0 0 3 0 0 0 0 0 0 0 3 0 0 0 0 0 0 0 3 0 0 0 0 0 0 1
@@ -105,3 +104,4 @@ $
 0 17.0 15.0
 0 15.0 13.0
 0 15.0 17.0
+1 20.0 15.0

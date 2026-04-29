@@ -62,7 +62,7 @@ type Player = (Vector2, Vector2, Float)
            -- level  player  textures
 type Walls         = (Int, Int, V.Vector Int)
 type Floors        = (Int, Int, V.Vector Int)
-type StaticSprites = [Vector2]
+type StaticSprites = [(Int, Vector2)]
 type Scene         = (Walls, Floors, StaticSprites)
 
 type State    = (Scene, Player, Textures, Canvas)
