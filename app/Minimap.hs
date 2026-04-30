@@ -50,7 +50,7 @@ drawMap (scene,_,_) position angle = do
   drawCircleOnGrid angledRay
   drawText (show t) 30 70 40 red
 
-  drawGrid :: IO ()
+  drawGrid
 
 drawGrid :: IO ()
 drawGrid = do
@@ -72,7 +72,7 @@ drawCellsHelper list x y
       let wallID = V.head list in 
         if wallID/=0 then
           drawRectangle
-            (x*cellSize) (y*cellSize) cellSize cellSize lightGray
+            (y*cellSize) (x*cellSize) cellSize cellSize lightGray
         else
           return ()
 

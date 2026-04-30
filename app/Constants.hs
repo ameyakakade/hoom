@@ -1,6 +1,6 @@
 module Constants (width, height, cellSize, planeEnds, textureSize, sWidth, sHeight
                  ,collisionDistance, acceleration, heightFactor
-                 ,deceleration, maxSpeed, fov, Textures, State, Canvas, FloorCanvas
+                 ,deceleration, maxSpeed, fov, Textures, State, UIState, Canvas, FloorCanvas
                  ,Walls, Floors, StaticSprites, WallTextures, FloorTextures, SpriteTextures
                  ,AppState, Scene, Player, FloorTex) where
 
@@ -66,4 +66,6 @@ type StaticSprites = [(Int, Vector2)]
 type Scene         = (Walls, Floors, StaticSprites)
 
 type State    = (Scene, Player, Textures, Canvas)
-type AppState = (Int, State, WindowResources)
+type UIState  = (Vector2, Float)
+type AppState = (Int, State, UIState, WindowResources)
+

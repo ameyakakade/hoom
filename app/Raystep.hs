@@ -52,7 +52,7 @@ hittingWall scene a b = getWallID scene cx cy
           cy = fromIntegral $ abs $ floor $ by + signum dy*0.001
 
 getWallID :: Walls -> Int -> Int -> Int
-getWallID (cols, rows, scene) y x 
+getWallID (cols, rows, scene) x y 
   | y < 0 || x < 0 = 0
   | y >= cols || x >= rows = 0
   | otherwise = scene V.! (rows*y + x) 

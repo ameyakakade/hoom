@@ -55,7 +55,7 @@ drawBars scene origin left right angle screenX textures
           | otherwise = Color 255 255 255 c
         c              = floor $ min ( ((20/distance)^2)*255 ) 255 
         drawingRect    = Rectangle (fromIntegral screenX) ( (fromIntegral height - heightR)/2 ) deltaRes heightR
-        textureRect    = Rectangle (fromIntegral $ floor $ interp*textureSize) 0 deltaRes textureSize
+        textureRect    = Rectangle (interp*textureSize) 0 deltaRes textureSize
         distance       = (wall |-| origin) |.| vector2Rotate (Vector2 1.0 0.0) angle
         interp         = max x y
         x              = snd . properFraction $ vector2'x wall
