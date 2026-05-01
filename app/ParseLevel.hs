@@ -56,20 +56,20 @@ parseLevel input = ((Vector2 ppx ppy, Vector2 pvx pvy, angle), (walls, floors, s
         wallsTemp :: [Int]
         wallsTemp   = map read $ concatMap words wallData
         wallsLevelA = map words wallData
-        wallCols    = length wallsLevelA
-        wallRows    = length $ head wallsLevelA
+        wallRows    = length wallsLevelA
+        wallCols    = length $ head wallsLevelA
 
         floor'     = V.fromList floorsTemp
         floorsTemp :: [Int]
         floorsTemp   = map read $ concatMap words floorData
         floorsLevelA = map words floorData
-        floorCols    = length floorsLevelA
-        floorRows    = length $ head floorsLevelA
+        floorRows    = length floorsLevelA
+        floorCols    = length $ head floorsLevelA
 
         [ppx,ppy,pvx,pvy,angle] = map read $ words $ unlines playerData
 
-        walls  = (wallCols, wallRows, wall)
-        floors = (floorCols, floorRows, floor')
+        walls  = (wallRows, wallCols, wall)
+        floors = (floorRows, floorCols, floor')
         stsp   = map sphf spriteData
 
         [wallPaths, floorPaths, spritePaths] = splitOn "+" paths

@@ -3,7 +3,7 @@
 
 module Main where
 
-import Raylib.Core (initWindow, setTargetFPS ,getFPS, windowShouldClose
+import Raylib.Core (initWindow, setTargetFPS ,getFPS, windowShouldClose, enableCursor
                    ,closeWindow ,getMouseDelta, isKeyDown, isKeyPressed ,disableCursor
                    ,getFrameTime)
 import Raylib.Core.Text (drawText)
@@ -32,10 +32,9 @@ import LevelEditor
 startup :: IO AppState 
 startup = do 
   window <- initWindow sWidth sHeight "Hoom"
-  disableCursor
   state <- load "levels/level3.txt"
   let uiState = (Vector2 0.0 0.0, 1.0)
-  return (1, state, uiState, window)
+  return (3, state, uiState, window)
 
 boolToNum :: (Num a) => Bool -> a
 boolToNum b = if b then 1 else 0
@@ -45,7 +44,7 @@ mainLoop (view, state, uiState, window)
   | view == 0 = startView view state uiState window
   | view == 1 = gameView view state uiState window
   | view == 2 = gameView view state uiState window
-  -- | view == 3 = editorView view state uiState window
+  | view == 3 = editorView view state uiState window
   | otherwise = undefined
 
 gameView :: Int -> State -> UIState -> WindowResources -> IO AppState
@@ -76,6 +75,7 @@ gameView view state uiState window = drawing
         fps <- getFPS
         drawText ("FPS: " ++ show fps) 30 40 30 red
 
+        if isPDown then enableCursor else return ()
         let newView = if isPDown && view == 2 then 3 else view
 
         return (newView, (scene, (position, velocity, angle), textures, canvas), uiState, window)

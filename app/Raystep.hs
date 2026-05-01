@@ -11,7 +11,7 @@ rayStep = rayStepA 0
 
 rayStepA :: Int -> Walls -> Vector2 -> Vector2 -> (Vector2, Int)
 rayStepA count scene a b 
-    | count > 50 = (b, 5)
+    | count > 50 = (b, 0)
     | vector2'x b > fromIntegral width   = (b, 0)
     | vector2'y b > fromIntegral height  = (b, 0)
     | vector2'x b < 0.0 = (0.0, 0)
@@ -52,10 +52,10 @@ hittingWall scene a b = getWallID scene cx cy
           cy = fromIntegral $ abs $ floor $ by + signum dy*0.001
 
 getWallID :: Walls -> Int -> Int -> Int
-getWallID (cols, rows, scene) x y 
+getWallID (rows, cols, scene) x y 
   | y < 0 || x < 0 = 0
-  | y >= cols || x >= rows = 0
-  | otherwise = scene V.! (rows*y + x) 
+  | y >= rows || x >= cols = 0
+  | otherwise = scene V.! (cols*y + x) 
 
 getWallIDVec2 :: Walls -> Vector2 -> Int
 getWallIDVec2 scene position = getWallID scene x y
