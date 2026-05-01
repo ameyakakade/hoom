@@ -33,7 +33,7 @@ startup :: IO AppState
 startup = do 
   window <- initWindow sWidth sHeight "Hoom"
   state <- load "levels/level3.txt"
-  let uiState = (Vector2 0.0 0.0, 1.0)
+  let uiState = (Vector2 0.0 0.0, 1.0, Selection {done=True, cells=[(0,1), (2,1)]})
   return (3, state, uiState, window)
 
 boolToNum :: (Num a) => Bool -> a

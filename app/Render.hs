@@ -136,7 +136,6 @@ drawSkybox angle textures = do
 
 drawSprites :: StaticSprites -> [Float] -> Vector2 -> Float -> SpriteTextures -> IO ()
 drawSprites sprites zBuf position angle textures = do
-  let sprite    = textures !! 0
 
   let spriteList = sortBy (\(d1, _, _, _) (d2, _, _, _) -> compare d2 d1 ) $ map (getXandDist position angle) sprites
   let fn (distance, xL, xR, id) = drawSpriteHelper (textures !! id) zBuf distance xL xR
