@@ -65,7 +65,7 @@ type Floors        = (Int, Int, V.Vector Int)
 type StaticSprites = [(Int, Vector2)]
 type Scene         = (Walls, Floors, StaticSprites)
 
-data Selection = None | Selection { done :: Bool
+data Selection = None | Selection { start :: Vector2
                                   , cells :: [(Int, Int)]
                                   } deriving (Eq)
 
