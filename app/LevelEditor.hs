@@ -15,6 +15,7 @@ import Data.List
 import qualified Data.Vector.Unboxed as V
 
 import Constants 
+import ParseLevel
 
 editorView :: Int -> State -> UIState -> WindowResources -> IO AppState
 editorView view state uiState window = drawing
@@ -24,7 +25,7 @@ editorView view state uiState window = drawing
 
       let (offset, scale, selection) = uiState
       let (wallRows, wallCols, wall) = walls
-      let (wallTex, floorTex, floorCanvas, spriteTex) = textures
+      let (wallTex, floorTex, floorCanvas, spriteTex, _) = textures
         
       clearBackground black
 
@@ -53,6 +54,9 @@ editorView view state uiState window = drawing
 
       isADown <- isKeyPressed KeyA
       let newWalls = if isADown then replaceCells walls 3 selection else walls
+
+      isSDown <- isKeyPressed KeyS
+      if isSDown then saveLevel state "uh" else return ()
 
       let newScene = (newWalls, floors, sprites)
       let newState = (newScene, player, textures, canvas)

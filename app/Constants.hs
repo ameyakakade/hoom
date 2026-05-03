@@ -52,7 +52,7 @@ type WallTextures   = [Texture]
 type SpriteTextures = [Texture]
 type FloorTextures  = [FloorTex]
 type FloorCanvas    = Texture
-type Textures       = (WallTextures, FloorTextures, FloorCanvas, SpriteTextures)
+type Textures       = (WallTextures, FloorTextures, FloorCanvas, SpriteTextures, ([String], [String], [String]))
   
 type Canvas = RenderTexture2D
 

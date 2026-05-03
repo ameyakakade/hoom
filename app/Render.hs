@@ -25,7 +25,7 @@ texW = width
 texH = div height 2
 
 drawScene :: Scene -> Vector2 -> Float -> Textures -> Canvas -> IO ()
-drawScene (scene, floors, sprites) position angle (wallTex, floorTex, floorCanvas, spriteTex) canvas = do
+drawScene (scene, floors, sprites) position angle (wallTex, floorTex, floorCanvas, spriteTex, _) canvas = do
   textureMode canvas (do
     clearBackground (Color 70 100 150 255)
 

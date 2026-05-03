@@ -1,8 +1,8 @@
 {-# LANGUAGE PatternSynonyms #-}
-module ParseLevel (load) where
+module ParseLevel (load, saveLevel) where
 
 import Raylib.Core.Textures (loadTexture, loadImage, loadRenderTexture)
-import Raylib.Types (pattern Vector2, renderTexture'texture, image'data)
+import Raylib.Types (Vector2, pattern Vector2, renderTexture'texture, image'data, vector2'x, vector2'y)
 
 import qualified Data.Vector.Unboxed as V
 import qualified Data.Vector.Storable as VS
@@ -23,7 +23,7 @@ load filename = do
   floorCanvas    <- renderTexture'texture <$> loadRenderTexture width (div height 2)
   spriteTextures <- mapM loadTexture spritePaths
 
-  let loadedTextures = (wallTextures, floorTextures, floorCanvas, spriteTextures)
+  let loadedTextures = (wallTextures, floorTextures, floorCanvas, spriteTextures, (wallPaths, floorPaths, spritePaths))
 
 
   canvas <- loadRenderTexture width height
@@ -85,3 +85,41 @@ splitOnHelper delim x acc = if x==delim then
                               []:acc
                             else
                               (x : head acc):tail acc 
+saveLevel :: State -> FilePath -> IO ()
+saveLevel state filePath= do
+  let (scene, playerData, textures, _) = state
+  let (walls, floors, staticSprites) = scene
+  let (position, velocity, angle) = playerData
+  let (_, _, _, _, (wallPaths, floorPaths, spritePaths)) = textures
+
+  let wallText = getTextBlock walls
+  let floorText = getTextBlock floors
+
+  let level = unlines $
+       [ (vec2ToText position),
+         (vec2ToText velocity),
+         show angle
+       ] ++ ["$"] ++
+       wallPaths ++ ["+"] ++
+       floorPaths ++ ["+"] ++
+       spritePaths ++ ["$"] ++
+       (getTextBlock walls) ++ ["$"] ++
+       (getTextBlock floors) ++ ["$"] ++
+       (map (\(x, v2)-> (show x ++ " " ++ (vec2ToText v2))) staticSprites)
+
+  putStr level
+       
+  return ()
+  
+
+getTextBlock :: (Int, Int, V.Vector Int) -> [String]
+getTextBlock (rows, cols, array) = map unwords $ chunks cols $ map show $ V.toList array
+
+chunks :: Int -> [a] -> [[a]]
+chunks _ [] = []
+chunks n xs =
+    let (ys, zs) = splitAt n xs
+    in  ys : chunks n zs
+
+vec2ToText :: Vector2 -> String
+vec2ToText vec = (show $ vector2'x vec) ++ " " ++ (show $ vector2'y vec)
