@@ -5,12 +5,14 @@ module LevelEditor (editorView) where
 import Raylib.Core (isKeyPressed, clearBackground, getMouseDelta, getMouseWheelMove, isKeyDown, isMouseButtonDown, disableCursor, isKeyReleased, isMouseButtonReleased, getMousePosition, isMouseButtonPressed)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
 import Raylib.Core.Text (drawText)
+import Raylib.Core.Textures (drawTexturePro)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, KeyboardKey(..), Rectangle, pattern Rectangle, MouseButton(..), Color(..))
 import Raylib.Util.Colors (black, red, white, lightGray)
 import Raylib.Core.Shapes (drawRectangleRec, drawLine, drawLineV, drawCircle, drawRectangleV)
-import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate)
+import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate, clamp)
 
 import Data.List
+import qualified Data.Vector.Unboxed as V
 
 import Constants 
 
@@ -22,9 +24,11 @@ editorView view state uiState window = drawing
 
       let (offset, scale, selection) = uiState
       let (wallRows, wallCols, wall) = walls
+      let (wallTex, floorTex, floorCanvas, spriteTex) = textures
         
       clearBackground black
 
+      drawWalls offset scale (fromIntegral wallRows) (fromIntegral wallCols) wall wallTex 0
       drawGrid offset scale (fromIntegral wallRows) (fromIntegral wallCols)
       drawSelection selection scale offset (fromIntegral wallRows) (fromIntegral wallCols)
 
@@ -106,3 +110,19 @@ drawSelection selection scale offset rows cols
   let fn (x, y) = drawRectangleRec (Rectangle (xOff + fromIntegral x*blockSize*scale + fromIntegral x*padding) (yOff + fromIntegral y*blockSize*scale + fromIntegral y*padding) (blockSize*scale + padding*2) (blockSize*scale + padding*2) ) (Color 200 200 200 100)
   mapM_ fn cell
   | otherwise = return ()
+
+drawWalls :: Vector2 -> Float -> Float -> Float -> V.Vector Int -> WallTextures -> Int -> IO ()
+drawWalls offset scale rows cols scene textures index
+  | scene == V.empty = return ()
+  | otherwise = do
+      let id = V.head scene
+      let textureRect = Rectangle 0 0 textureSize textureSize
+      let x = fromIntegral $ mod (index) (floor cols)
+      let y = fromIntegral $ floor $ ((fromIntegral index) / cols)
+      let offX = vector2'x offset
+      let offY = vector2'y offset
+      let drawingRect = Rectangle (offX + blockSize*x*scale + padding*x + padding) (offY + blockSize*y*scale + padding*y + padding) (blockSize*scale) (blockSize*scale)
+      if id /= 0 then
+        drawTexturePro (textures!!id) textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
+        else return ()
+      drawWalls offset scale rows cols (V.tail scene) textures (index+1)
