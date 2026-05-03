@@ -51,9 +51,14 @@ editorView view state uiState window = drawing
       if isPDown then disableCursor else return ()
       let newView = if isPDown then 2 else view
 
+      isADown <- isKeyPressed KeyA
+      let newWalls = if isADown then replaceCells walls 3 selection else walls
+
+      let newScene = (newWalls, floors, sprites)
+      let newState = (newScene, player, textures, canvas)
       let newUiState = (newOffset, newScale, newSelection)
 
-      return (newView, state, newUiState, window)
+      return (newView, newState, newUiState, window)
   )
 
 blockSize = 20
@@ -95,10 +100,10 @@ updateCells :: Float -> Vector2 -> Vector2 -> [(Int, Int)] -> [(Int, Int)]
 updateCells scale start end oldCells = nub $ newCells ++ oldCells
   where
     newCells = [(x,y) | x <- [sx..ex], y <- [sy..ey] ]
-    sx = floor $ (vector2'x start) / (blockSize*scale + padding)
-    sy = floor $ (vector2'y start) / (blockSize*scale + padding)
-    ex = floor $ (vector2'x end) / (blockSize*scale + padding)
-    ey = floor $ (vector2'y end) / (blockSize*scale + padding)
+    sx = floor $ vector2'x start / (blockSize*scale + padding)
+    sy = floor $ vector2'y start / (blockSize*scale + padding)
+    ex = floor $ vector2'x end / (blockSize*scale + padding)
+    ey = floor $ vector2'y end / (blockSize*scale + padding)
 
 drawSelection :: Selection -> Float -> Vector2 -> Float -> Float -> IO ()
 drawSelection selection scale offset rows cols
@@ -117,8 +122,8 @@ drawWalls offset scale rows cols scene textures index
   | otherwise = do
       let id = V.head scene
       let textureRect = Rectangle 0 0 textureSize textureSize
-      let x = fromIntegral $ mod (index) (floor cols)
-      let y = fromIntegral $ floor $ ((fromIntegral index) / cols)
+      let x = fromIntegral $ mod index (floor cols)
+      let y = fromIntegral $ floor $ (fromIntegral index / cols)
       let offX = vector2'x offset
       let offY = vector2'y offset
       let drawingRect = Rectangle (offX + blockSize*x*scale + padding*x + padding) (offY + blockSize*y*scale + padding*y + padding) (blockSize*scale) (blockSize*scale)
@@ -126,3 +131,17 @@ drawWalls offset scale rows cols scene textures index
         drawTexturePro (textures!!id) textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
         else return ()
       drawWalls offset scale rows cols (V.tail scene) textures (index+1)
+
+replaceCells :: (Int, Int, V.Vector Int) -> Int -> Selection -> (Int, Int, V.Vector Int)
+replaceCells (rows, cols, scene) id selection = (rows, cols, replaceByIndex scene 0 newCells id)
+  where newCells = sort $ map (\(x, y) -> x + cols*y) $ cells selection
+
+replaceByIndex :: V.Vector Int -> Int -> [Int] -> Int -> V.Vector Int
+replaceByIndex list index indexList value
+  | null indexList = list
+  | list == V.empty = V.empty
+  | otherwise = if index == head indexList
+                then value `V.cons` replaceByIndex (V.tail list) (index+1) (tail indexList) value
+                else (V.head list) `V.cons` replaceByIndex (V.tail list) (index+1) (indexList) value
+
+
