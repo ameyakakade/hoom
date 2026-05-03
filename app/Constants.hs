@@ -70,6 +70,5 @@ data Selection = None | Selection { start :: Vector2
                                   } deriving (Eq)
 
 type State    = (Scene, Player, Textures, Canvas)
-type UIState  = (Vector2, Float, Selection)
+type UIState  = (Vector2, Float, Selection, [Texture])
 type AppState = (Int, State, UIState, WindowResources)
-

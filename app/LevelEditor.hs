@@ -6,7 +6,7 @@ import Raylib.Core (isKeyPressed, clearBackground, getMouseDelta, getMouseWheelM
 import Raylib.Util (drawing, raylibApplication, WindowResources)
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Textures (drawTexturePro)
-import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, KeyboardKey(..), Rectangle, pattern Rectangle, MouseButton(..), Color(..))
+import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y, KeyboardKey(..), Rectangle, pattern Rectangle, MouseButton(..), Color(..), Texture)
 import Raylib.Util.Colors (black, red, white, lightGray)
 import Raylib.Core.Shapes (drawRectangleRec, drawLine, drawLineV, drawCircle, drawRectangleV)
 import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate, clamp)
@@ -23,13 +23,16 @@ editorView view state uiState window = drawing
       let (scene, player, textures, canvas) = state
       let (walls, floors, sprites) = scene
 
-      let (offset, scale, selection) = uiState
+      let (offset, scale, selection, floorTex) = uiState
       let (wallRows, wallCols, wall) = walls
-      let (wallTex, floorTex, floorCanvas, spriteTex, _) = textures
+      let (floorRows, floorCols, floor') = floors
+      let (wallTex, _, floorCanvas, spriteTex, _) = textures
         
       clearBackground black
 
-      drawWalls offset scale (fromIntegral wallRows) (fromIntegral wallCols) wall wallTex 0
+      drawCells True offset scale (fromIntegral floorRows) (fromIntegral floorCols) floor' floorTex 0
+      drawCells False offset scale (fromIntegral wallRows) (fromIntegral wallCols) wall wallTex 0
+      drawSprites offset scale sprites spriteTex
       drawGrid offset scale (fromIntegral wallRows) (fromIntegral wallCols)
       drawSelection selection scale offset (fromIntegral wallRows) (fromIntegral wallCols)
 
@@ -60,13 +63,13 @@ editorView view state uiState window = drawing
 
       let newScene = (newWalls, floors, sprites)
       let newState = (newScene, player, textures, canvas)
-      let newUiState = (newOffset, newScale, newSelection)
+      let newUiState = (newOffset, newScale, newSelection, floorTex)
 
       return (newView, newState, newUiState, window)
   )
 
-blockSize = 20
-padding = 2
+blockSize = 40
+padding = 1
 
 drawGrid :: Vector2 -> Float -> Float -> Float -> IO ()
 drawGrid offset scale rows cols = do
@@ -120,8 +123,8 @@ drawSelection selection scale offset rows cols
   mapM_ fn cell
   | otherwise = return ()
 
-drawWalls :: Vector2 -> Float -> Float -> Float -> V.Vector Int -> WallTextures -> Int -> IO ()
-drawWalls offset scale rows cols scene textures index
+drawCells :: Bool -> Vector2 -> Float -> Float -> Float -> V.Vector Int -> [Texture] -> Int -> IO ()
+drawCells floorFlag offset scale rows cols scene textures index
   | scene == V.empty = return ()
   | otherwise = do
       let id = V.head scene
@@ -131,10 +134,22 @@ drawWalls offset scale rows cols scene textures index
       let offX = vector2'x offset
       let offY = vector2'y offset
       let drawingRect = Rectangle (offX + blockSize*x*scale + padding*x + padding) (offY + blockSize*y*scale + padding*y + padding) (blockSize*scale) (blockSize*scale)
-      if id /= 0 then
+      if (floorFlag || id /= 0) then
         drawTexturePro (textures!!id) textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
         else return ()
-      drawWalls offset scale rows cols (V.tail scene) textures (index+1)
+      drawCells floorFlag offset scale rows cols (V.tail scene) textures (index+1)
+
+drawSprites :: Vector2 -> Float -> StaticSprites -> SpriteTextures -> IO ()
+drawSprites offset scale sprites textures = mapM_ fn sprites
+  where fn (id, v2) = drawTexturePro
+                      (textures!!id)
+                      (Rectangle 0 0 textureSize textureSize)
+                      (Rectangle (offX + (vector2'x v2)*(blockSize*scale + padding))
+                       (offY + (vector2'y v2)*(blockSize*scale + padding))
+                        (blockSize*scale) (blockSize*scale))
+                      (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
+        offX = vector2'x offset
+        offY = vector2'y offset
 
 replaceCells :: (Int, Int, V.Vector Int) -> Int -> Selection -> (Int, Int, V.Vector Int)
 replaceCells (rows, cols, scene) id selection = (rows, cols, replaceByIndex scene 0 newCells id)

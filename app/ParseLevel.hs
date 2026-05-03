@@ -11,7 +11,7 @@ import System.IO
 
 import Constants
 
-load :: String -> IO State
+load :: String -> IO (State, UIState)
 load filename = do
   levelHandle <- openFile filename ReadMode
   contents    <- hGetContents levelHandle
@@ -25,10 +25,12 @@ load filename = do
 
   let loadedTextures = (wallTextures, floorTextures, floorCanvas, spriteTextures, (wallPaths, floorPaths, spritePaths))
 
-
   canvas <- loadRenderTexture width height
 
-  return (levelData, playerData, loadedTextures, canvas)
+  floorTexturesUnRaw <- mapM loadTexture floorPaths
+  let uiState = (Vector2 0.0 0.0, 1.0, Selection {start = Vector2 0.0 0.0, cells=[(0,1), (2,1)]}, floorTexturesUnRaw)
+
+  return ((levelData, playerData, loadedTextures, canvas), uiState)
 
 loadRawImage :: String -> IO FloorTex
 loadRawImage path = do
