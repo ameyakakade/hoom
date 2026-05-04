@@ -16,7 +16,7 @@ load filename = do
   levelHandle <- openFile filename ReadMode
   contents    <- hGetContents levelHandle
 
-  let (playerData, levelData, wallPaths, floorPaths, spritePaths, nextLevel) = parseLevel contents 
+  let (playerData, levelData, wallPaths, floorPaths, spritePaths, nextLevel, maxKeys) = parseLevel contents 
 
   wallTextures   <- mapM loadTexture wallPaths
   floorTextures  <- mapM loadRawImage floorPaths
@@ -30,7 +30,7 @@ load filename = do
   floorTexturesUnRaw <- mapM loadTexture floorPaths
   let uiState = (Vector2 0.0 0.0, 1.0, Selection {start = Vector2 0.0 0.0, cells=[(0,1), (2,1)]}, floorTexturesUnRaw)
 
-  return ((levelData, playerData, loadedTextures, canvas, nextLevel), uiState)
+  return ((levelData, playerData, loadedTextures, canvas, nextLevel, maxKeys), uiState)
 
 loadRawImage :: String -> IO FloorTex
 loadRawImage path = do
@@ -49,8 +49,8 @@ loadRawImage path = do
   return floorTex
 
 
-parseLevel :: String -> (Player, Scene, [String], [String], [String], NextLevel)
-parseLevel input = ((Vector2 ppx ppy, Vector2 pvx pvy, angle), (walls, floors, stsp), wallPaths, floorPaths, spritePaths, nextLevel)
+parseLevel :: String -> (Player, Scene, [String], [String], [String], NextLevel, Keys)
+parseLevel input = ((Vector2 ppx ppy, Vector2 pvx pvy, angle), (walls, floors, stsp), wallPaths, floorPaths, spritePaths, nextLevel, maxKeys)
   where larr = lines input
         [playerData, paths, nextLevelData, wallData, floorData, spriteData] = splitOn "$" larr
 
@@ -76,6 +76,8 @@ parseLevel input = ((Vector2 ppx ppy, Vector2 pvx pvy, angle), (walls, floors, s
         floors = (floorRows, floorCols, floor')
         stsp   = map sphf spriteData
 
+        maxKeys = length $ filter (\(x, _) -> x == 0) stsp
+
         [wallPaths, floorPaths, spritePaths] = splitOn "+" paths
 
 sphf l = (floor id, Vector2 x y)
@@ -90,8 +92,8 @@ splitOnHelper delim x acc = if x==delim then
                             else
                               (x : head acc):tail acc 
 saveLevel :: State -> FilePath -> IO ()
-saveLevel state filePath= do
-  let (scene, playerData, textures, _, nextLevel) = state
+saveLevel state filePath = do
+  let (scene, playerData, textures, _, nextLevel, _) = state
   let (walls, floors, staticSprites) = scene
   let (position, velocity, angle) = playerData
   let (_, _, _, _, (wallPaths, floorPaths, spritePaths)) = textures
@@ -111,7 +113,7 @@ saveLevel state filePath= do
        (getTextBlock floors) ++ ["$"] ++
        (map (\(x, v2)-> (show x ++ " " ++ (vec2ToText v2))) staticSprites)
 
-  putStr level
+  writeFile filePath level
        
   return ()
   

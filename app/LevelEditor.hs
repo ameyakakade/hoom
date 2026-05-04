@@ -11,6 +11,8 @@ import Raylib.Util.Colors (black, red, white, lightGray)
 import Raylib.Core.Shapes (drawRectangleRec, drawLine, drawLineV, drawCircle, drawRectangleV)
 import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate, clamp)
 
+import System.IO
+import System.Environment
 import Data.List
 import qualified Data.Vector.Unboxed as V
 
@@ -20,7 +22,7 @@ import ParseLevel
 editorView :: Int -> State -> UIState -> WindowResources -> IO AppState
 editorView view state uiState window = drawing
   ( do
-      let (scene, player, textures, canvas, nextLevel) = state
+      let (scene, player, textures, canvas, nextLevel, keys) = state
       let (walls, floors, sprites) = scene
 
       let (offset, scale, selection, floorTex) = uiState
@@ -83,10 +85,12 @@ editorView view state uiState window = drawing
       let newFloors = if isZDown then replaceCells floors selectedId selection else floors
 
       isSDown <- isKeyPressed KeyS
-      if isSDown then saveLevel state "uh" else return ()
+
+      args <- getArgs
+      if isSDown then saveLevel state (head args) else return ()
 
       let newScene = (newWalls, newFloors, sprites)
-      let newState = (newScene, player, textures, canvas, nextLevel)
+      let newState = (newScene, player, textures, canvas, nextLevel, keys)
       let newUiState = (newOffset, newScale, newSelection, floorTex)
 
       return (newView, newState, newUiState, window)

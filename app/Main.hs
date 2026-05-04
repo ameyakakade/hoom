@@ -9,12 +9,11 @@ import Raylib.Core (initWindow, setTargetFPS ,getFPS, windowShouldClose, enableC
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Textures (loadTexture, loadImage, loadRenderTexture)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
-import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate)
+import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate, vectorDistance)
 import Raylib.Util.Colors (red)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
-                    ,renderTexture'texture ,KeyboardKey(KeyM), Rectangle(..)
-                    ,KeyboardKey(KeyW), KeyboardKey(KeyA) ,KeyboardKey(KeyS)
-                    ,KeyboardKey(KeyD), KeyboardKey(KeyP), Image, image'data)
+                    ,renderTexture'texture ,KeyboardKey(..), Rectangle(..)
+                    ,Image, image'data)
 import Raylib.Util.GUI (guiButton)
 
 import System.IO
@@ -51,7 +50,7 @@ mainLoop (view, state, uiState, window)
 gameView :: Int -> State -> UIState -> WindowResources -> IO AppState
 gameView view state uiState window = drawing
     ( do
-        let (scene, (positionOld, velocityOld, angleOld), textures, canvas, nextLevel) = state
+        let (scene, (positionOld, velocityOld, angleOld), textures, canvas, nextLevel, keys) = state
         let (walls, floors, sprites) = scene
         isMDown <- isKeyDown KeyM
         isPDown <- isKeyPressed KeyP
@@ -73,30 +72,40 @@ gameView view state uiState window = drawing
 
         if isMDown then drawMap scene position angle else drawScene scene position angle textures canvas
 
+        let (newSprites, keyCount) = updateSprites sprites position
+
         fps <- getFPS
         drawText ("FPS: " ++ show fps) 30 40 30 red
 
         if isPDown then enableCursor else return ()
         let newView = (checkNextLevel position walls nextLevel) $ if isPDown && view == 2 then 3 else view
 
-        return (newView, (scene, (position, velocity, angle), textures, canvas, nextLevel), uiState, window)
+        return (newView, ((walls, floors, newSprites), (position, velocity, angle), textures, canvas, nextLevel, keys), uiState, window)
     )
+
+updateSprites :: StaticSprites -> Vector2 -> (StaticSprites, Int)
+updateSprites sprites position = (newSprites, count)
+  where fn (id, spritePosition) = (id /= 0) || ( 0.3 <= (vectorDistance spritePosition position))
+        newSprites = filter fn sprites
+        count = length $ filter (\(x, _) -> x == 0) newSprites
 
 startView view state uiState window = drawing
   ( do
       width <- fromIntegral <$> getRenderWidth
       let buttonWidth = 100
       startGame <- guiButton (Rectangle ((width/2) - (buttonWidth/2)) 100 buttonWidth 30) $ Just "Start Game" 
-      editor <- guiButton (Rectangle ((width/2) - (buttonWidth/2)) 140 buttonWidth 30) $ Just "Open Editor" 
+      editor <- isKeyPressed KeyE
       let newView = if editor then 3 else if startGame then 1 else 0
       if startGame then disableCursor else return ()
 
-      return (newView, state, uiState, window)
+      (newState, newUiState) <- if startGame then (load "levels/level1.txt") else return (state, uiState)
+
+      return (newView, newState, newUiState, window)
   )
 
 changeLevel :: Int -> State -> UIState -> WindowResources -> IO AppState
 changeLevel view state uiState window = do
-  let (_, _, _, _, (_, filePath)) = state
+  let (_, _, _, _, (_, filePath), _) = state
   (newState, newUiState) <- load filePath
   disableCursor
   return (1, newState, newUiState, window)
