@@ -22,7 +22,7 @@ import ParseLevel
 editorView :: Int -> State -> UIState -> WindowResources -> IO AppState
 editorView view state uiState window = drawing
   ( do
-      let (scene, player, textures, canvas, nextLevel, keys) = state
+      let (scene, player, textures, canvas, nextLevel, keys, audio) = state
       let (walls, floors, sprites) = scene
 
       let (offset, scale, selection, floorTex) = uiState
@@ -90,7 +90,7 @@ editorView view state uiState window = drawing
       if isSDown then saveLevel state (head args) else return ()
 
       let newScene = (newWalls, newFloors, sprites)
-      let newState = (newScene, player, textures, canvas, nextLevel, keys)
+      let newState = (newScene, player, textures, canvas, nextLevel, keys, audio)
       let newUiState = (newOffset, newScale, newSelection, floorTex)
 
       return (newView, newState, newUiState, window)

@@ -5,11 +5,12 @@ module Main where
 
 import Raylib.Core (initWindow, setTargetFPS ,getFPS, windowShouldClose, enableCursor
                    ,closeWindow ,getMouseDelta, isKeyDown, isKeyPressed ,disableCursor
-                   ,getFrameTime, getRenderWidth)
+                   ,getFrameTime, getRenderWidth,)
+import Raylib.Core.Audio (initAudioDevice, playSound)
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Textures (loadTexture, loadImage, loadRenderTexture)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
-import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate, vectorDistance)
+import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate, vectorDistance, magnitude)
 import Raylib.Util.Colors (red)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
                     ,renderTexture'texture ,KeyboardKey(..), Rectangle(..)
@@ -32,7 +33,8 @@ import LevelEditor
 startup :: IO AppState 
 startup = do 
   window <- initWindow sWidth sHeight "Hoom"
-  (state, uiState) <- load "levels/level3.txt"
+  initAudioDevice
+  (state, uiState) <- load "levels/level1.txt"
   return (0, state, uiState, window)
 
 boolToNum :: (Num a) => Bool -> a
@@ -50,7 +52,7 @@ mainLoop (view, state, uiState, window)
 gameView :: Int -> State -> UIState -> WindowResources -> IO AppState
 gameView view state uiState window = drawing
     ( do
-        let (scene, (positionOld, velocityOld, angleOld), textures, canvas, nextLevel, keys) = state
+        let (scene, (positionOld, velocityOld, angleOld, stepOld, stepState), textures, canvas, nextLevel, keys, audio) = state
         let (walls, floors, sprites) = scene
         isMDown <- isKeyDown KeyM
         isPDown <- isKeyPressed KeyP
@@ -70,9 +72,15 @@ gameView view state uiState window = drawing
         let velocity    = updateVelocity velocityOld velocityDir positionOld walls
         let position    = positionOld |+| (velocity |* time) -- setTargetFPS 60
 
+        let checkStep = stepOld > 2.0
+        if checkStep then ( if stepState then playSound (audio !! 1) else playSound (audio !! 2) )else return ()
+        let step = if checkStep then 0 else (magnitude $ velocity |* time) + stepOld
+        let newStepState = if checkStep then (not stepState) else stepState
+
         if isMDown then drawMap scene position angle else drawScene scene position angle textures canvas
 
-        let (newSprites, keyCount) = updateSprites sprites position
+        let (newSprites, keyCount, changed) = updateSprites sprites position
+        if changed then (playSound (head audio)) else return ()
 
         fps <- getFPS
         drawText ("FPS: " ++ show fps) 30 40 30 red
@@ -80,14 +88,15 @@ gameView view state uiState window = drawing
         if isPDown then enableCursor else return ()
         let newView = if (keyCount == keys) then view else (checkNextLevel position walls nextLevel) $ if isPDown && view == 2 then 3 else view
 
-        return (newView, ((walls, floors, newSprites), (position, velocity, angle), textures, canvas, nextLevel, keys), uiState, window)
+        return (newView, ((walls, floors, newSprites), (position, velocity, angle, step, newStepState), textures, canvas, nextLevel, keys, audio), uiState, window)
     )
 
-updateSprites :: StaticSprites -> Vector2 -> (StaticSprites, Int)
-updateSprites sprites position = (newSprites, count)
+updateSprites :: StaticSprites -> Vector2 -> (StaticSprites, Int, Bool)
+updateSprites sprites position = (newSprites, count, changed)
   where fn (id, spritePosition) = (id /= 0) || ( 0.3 <= (vectorDistance spritePosition position))
         newSprites = filter fn sprites
         count = length $ filter (\(x, _) -> x == 0) newSprites
+        changed = (length $ sprites) /= (length $ newSprites)
 
 startView view state uiState window = drawing
   ( do
@@ -105,7 +114,7 @@ startView view state uiState window = drawing
 
 changeLevel :: Int -> State -> UIState -> WindowResources -> IO AppState
 changeLevel view state uiState window = do
-  let (_, _, _, _, (_, filePath), _) = state
+  let (_, _, _, _, (_, filePath), _, _) = state
   (newState, newUiState) <- load filePath
   disableCursor
   return (1, newState, newUiState, window)

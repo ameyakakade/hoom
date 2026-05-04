@@ -1,6 +1,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 module ParseLevel (load, saveLevel) where
 
+import Raylib.Core.Audio (loadSound)
 import Raylib.Core.Textures (loadTexture, loadImage, loadRenderTexture)
 import Raylib.Types (Vector2, pattern Vector2, renderTexture'texture, image'data, vector2'x, vector2'y)
 
@@ -16,21 +17,23 @@ load filename = do
   levelHandle <- openFile filename ReadMode
   contents    <- hGetContents levelHandle
 
-  let (playerData, levelData, wallPaths, floorPaths, spritePaths, nextLevel, maxKeys) = parseLevel contents 
+  let (playerData, levelData, wallPaths, floorPaths, spritePaths, audioPaths, nextLevel, maxKeys) = parseLevel contents 
 
   wallTextures   <- mapM loadTexture wallPaths
   floorTextures  <- mapM loadRawImage floorPaths
   floorCanvas    <- renderTexture'texture <$> loadRenderTexture width (div height 2)
   spriteTextures <- mapM loadTexture spritePaths
 
-  let loadedTextures = (wallTextures, floorTextures, floorCanvas, spriteTextures, (wallPaths, floorPaths, spritePaths))
+  audio <- mapM loadSound audioPaths
+
+  let loadedTextures = (wallTextures, floorTextures, floorCanvas, spriteTextures, (wallPaths, floorPaths, spritePaths, audioPaths))
 
   canvas <- loadRenderTexture width height
 
   floorTexturesUnRaw <- mapM loadTexture floorPaths
   let uiState = (Vector2 0.0 0.0, 1.0, Selection {start = Vector2 0.0 0.0, cells=[(0,1), (2,1)]}, floorTexturesUnRaw)
 
-  return ((levelData, playerData, loadedTextures, canvas, nextLevel, maxKeys), uiState)
+  return ((levelData, playerData, loadedTextures, canvas, nextLevel, maxKeys, audio), uiState)
 
 loadRawImage :: String -> IO FloorTex
 loadRawImage path = do
@@ -48,9 +51,8 @@ loadRawImage path = do
 
   return floorTex
 
-
-parseLevel :: String -> (Player, Scene, [String], [String], [String], NextLevel, Keys)
-parseLevel input = ((Vector2 ppx ppy, Vector2 pvx pvy, angle), (walls, floors, stsp), wallPaths, floorPaths, spritePaths, nextLevel, maxKeys)
+parseLevel :: String -> (Player, Scene, [String], [String], [String], [String], NextLevel, Keys)
+parseLevel input = ((Vector2 ppx ppy, Vector2 pvx pvy, angle, 0, False), (walls, floors, stsp), wallPaths, floorPaths, spritePaths, audioPaths, nextLevel, maxKeys)
   where larr = lines input
         [playerData, paths, nextLevelData, wallData, floorData, spriteData] = splitOn "$" larr
 
@@ -78,7 +80,7 @@ parseLevel input = ((Vector2 ppx ppy, Vector2 pvx pvy, angle), (walls, floors, s
 
         maxKeys = length $ filter (\(x, _) -> x == 0) stsp
 
-        [wallPaths, floorPaths, spritePaths] = splitOn "+" paths
+        [wallPaths, floorPaths, spritePaths, audioPaths] = splitOn "+" paths
 
 sphf l = (floor id, Vector2 x y)
   where [id, x, y] = map read $ words l
@@ -93,10 +95,10 @@ splitOnHelper delim x acc = if x==delim then
                               (x : head acc):tail acc 
 saveLevel :: State -> FilePath -> IO ()
 saveLevel state filePath = do
-  let (scene, playerData, textures, _, nextLevel, _) = state
+  let (scene, playerData, textures, _, nextLevel, _, _) = state
   let (walls, floors, staticSprites) = scene
-  let (position, velocity, angle) = playerData
-  let (_, _, _, _, (wallPaths, floorPaths, spritePaths)) = textures
+  let (position, velocity, angle, _, _) = playerData
+  let (_, _, _, _, (wallPaths, floorPaths, spritePaths, audioPaths)) = textures
 
   let wallText = getTextBlock walls
   let floorText = getTextBlock floors
@@ -108,7 +110,8 @@ saveLevel state filePath = do
        ] ++ ["$"] ++
        wallPaths ++ ["+"] ++
        floorPaths ++ ["+"] ++
-       spritePaths ++ ["$"] ++
+       spritePaths ++ ["+"] ++
+       audioPaths ++ ["$"] ++
        (getTextBlock walls) ++ ["$"] ++
        (getTextBlock floors) ++ ["$"] ++
        (map (\(x, v2)-> (show x ++ " " ++ (vec2ToText v2))) staticSprites)
