@@ -55,13 +55,37 @@ editorView view state uiState window = drawing
       if isPDown then disableCursor else return ()
       let newView = if isPDown then 2 else view
 
+      is1 <- isKeyDown KeyOne
+      is2 <- isKeyDown KeyTwo
+      is3 <- isKeyDown KeyThree
+      is4 <- isKeyDown KeyFour
+      is5 <- isKeyDown KeyFive
+      is6 <- isKeyDown KeySix
+      is7 <- isKeyDown KeySeven
+      is8 <- isKeyDown KeyEight
+      is9 <- isKeyDown KeyNine
+      is0 <- isKeyDown KeyZero
+
+      let selectedId = if is1 then 1
+                       else if is2 then 2
+                            else if is3 then 3
+                                 else if is4 then 4
+                                      else if is5 then 5
+                                           else if is6 then 6
+                                                else if is7 then 7
+                                                     else if is8 then 8
+                                                          else if is9 then 9 else 0
+
       isADown <- isKeyPressed KeyA
-      let newWalls = if isADown then replaceCells walls 3 selection else walls
+      let newWalls = if isADown then replaceCells walls selectedId selection else walls
+
+      isZDown <- isKeyPressed KeyZ
+      let newFloors = if isZDown then replaceCells floors selectedId selection else floors
 
       isSDown <- isKeyPressed KeyS
       if isSDown then saveLevel state "uh" else return ()
 
-      let newScene = (newWalls, floors, sprites)
+      let newScene = (newWalls, newFloors, sprites)
       let newState = (newScene, player, textures, canvas, nextLevel)
       let newUiState = (newOffset, newScale, newSelection, floorTex)
 

@@ -25,7 +25,7 @@ cellSize :: Int
 cellSize = 25
 
 fov :: Float
-fov = pi/1.5
+fov = pi/2.0
 
 planeEnds :: Float
 planeEnds = collisionDistance * tan (fov/2)

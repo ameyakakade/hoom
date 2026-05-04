@@ -5,16 +5,17 @@ module Main where
 
 import Raylib.Core (initWindow, setTargetFPS ,getFPS, windowShouldClose, enableCursor
                    ,closeWindow ,getMouseDelta, isKeyDown, isKeyPressed ,disableCursor
-                   ,getFrameTime)
+                   ,getFrameTime, getRenderWidth)
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Textures (loadTexture, loadImage, loadRenderTexture)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
 import Raylib.Util.Math(Vector(..), vectorNormalize, vector2Rotate)
 import Raylib.Util.Colors (red)
 import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y
-                    ,renderTexture'texture ,KeyboardKey(KeyM)
+                    ,renderTexture'texture ,KeyboardKey(KeyM), Rectangle(..)
                     ,KeyboardKey(KeyW), KeyboardKey(KeyA) ,KeyboardKey(KeyS)
                     ,KeyboardKey(KeyD), KeyboardKey(KeyP), Image, image'data)
+import Raylib.Util.GUI (guiButton)
 
 import System.IO
 import System.Environment
@@ -83,10 +84,13 @@ gameView view state uiState window = drawing
 
 startView view state uiState window = drawing
   ( do
-      drawText "This is the start screen" 30 40 30 red
-      isMDown <- isKeyDown KeyM
-      let newView = if isMDown then 1 else 0
-      disableCursor
+      width <- fromIntegral <$> getRenderWidth
+      let buttonWidth = 100
+      startGame <- guiButton (Rectangle ((width/2) - (buttonWidth/2)) 100 buttonWidth 30) $ Just "Start Game" 
+      editor <- guiButton (Rectangle ((width/2) - (buttonWidth/2)) 140 buttonWidth 30) $ Just "Open Editor" 
+      let newView = if editor then 3 else if startGame then 1 else 0
+      if startGame then disableCursor else return ()
+
       return (newView, state, uiState, window)
   )
 
