@@ -2,7 +2,7 @@ module Constants (width, height, cellSize, planeEnds, textureSize, sWidth, sHeig
                  ,collisionDistance, acceleration, heightFactor
                  ,deceleration, maxSpeed, fov, Textures, State, UIState, Canvas, FloorCanvas
                  ,Walls, Floors, StaticSprites, WallTextures, FloorTextures, SpriteTextures
-                 ,AppState, Scene, Player, FloorTex, Selection(..)) where
+                 ,AppState, Scene, Player, FloorTex, Selection(..), NextLevel) where
 
 import Raylib.Util (WindowResources)
 import Raylib.Types (Vector2, Texture, RenderTexture2D)
@@ -25,7 +25,7 @@ cellSize :: Int
 cellSize = 25
 
 fov :: Float
-fov = pi/2.0
+fov = pi/1.5
 
 planeEnds :: Float
 planeEnds = collisionDistance * tan (fov/2)
@@ -65,10 +65,12 @@ type Floors        = (Int, Int, V.Vector Int)
 type StaticSprites = [(Int, Vector2)]
 type Scene         = (Walls, Floors, StaticSprites)
 
+type NextLevel = (Int, FilePath)
+
 data Selection = None | Selection { start :: Vector2
                                   , cells :: [(Int, Int)]
                                   } deriving (Eq)
 
-type State    = (Scene, Player, Textures, Canvas)
+type State    = (Scene, Player, Textures, Canvas, NextLevel)
 type UIState  = (Vector2, Float, Selection, [Texture])
 type AppState = (Int, State, UIState, WindowResources)

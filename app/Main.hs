@@ -33,7 +33,7 @@ startup :: IO AppState
 startup = do 
   window <- initWindow sWidth sHeight "Hoom"
   (state, uiState) <- load "levels/level3.txt"
-  return (3, state, uiState, window)
+  return (0, state, uiState, window)
 
 boolToNum :: (Num a) => Bool -> a
 boolToNum b = if b then 1 else 0
@@ -44,12 +44,13 @@ mainLoop (view, state, uiState, window)
   | view == 1 = gameView view state uiState window
   | view == 2 = gameView view state uiState window
   | view == 3 = editorView view state uiState window
+  | view == 4 = changeLevel view state uiState window
   | otherwise = undefined
 
 gameView :: Int -> State -> UIState -> WindowResources -> IO AppState
 gameView view state uiState window = drawing
     ( do
-        let (scene, (positionOld, velocityOld, angleOld), textures, canvas) = state
+        let (scene, (positionOld, velocityOld, angleOld), textures, canvas, nextLevel) = state
         let (walls, floors, sprites) = scene
         isMDown <- isKeyDown KeyM
         isPDown <- isKeyPressed KeyP
@@ -75,9 +76,9 @@ gameView view state uiState window = drawing
         drawText ("FPS: " ++ show fps) 30 40 30 red
 
         if isPDown then enableCursor else return ()
-        let newView = if isPDown && view == 2 then 3 else view
+        let newView = (checkNextLevel position walls nextLevel) $ if isPDown && view == 2 then 3 else view
 
-        return (newView, (scene, (position, velocity, angle), textures, canvas), uiState, window)
+        return (newView, (scene, (position, velocity, angle), textures, canvas, nextLevel), uiState, window)
     )
 
 startView view state uiState window = drawing
@@ -85,8 +86,19 @@ startView view state uiState window = drawing
       drawText "This is the start screen" 30 40 30 red
       isMDown <- isKeyDown KeyM
       let newView = if isMDown then 1 else 0
+      disableCursor
       return (newView, state, uiState, window)
   )
+
+changeLevel :: Int -> State -> UIState -> WindowResources -> IO AppState
+changeLevel view state uiState window = do
+  let (_, _, _, _, (_, filePath)) = state
+  (newState, newUiState) <- load filePath
+  disableCursor
+  return (1, newState, newUiState, window)
+
+checkNextLevel :: Vector2 -> Walls -> NextLevel -> Int -> Int
+checkNextLevel position (_, cols, _) (index, _) currView = if (currView == 1 && (index == ((floor $ vector2'y position)*cols + (floor $ vector2'x position)) ) ) then 4 else currView
 
 shouldClose :: AppState -> IO Bool
 shouldClose _ = windowShouldClose

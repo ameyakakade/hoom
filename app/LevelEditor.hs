@@ -20,7 +20,7 @@ import ParseLevel
 editorView :: Int -> State -> UIState -> WindowResources -> IO AppState
 editorView view state uiState window = drawing
   ( do
-      let (scene, player, textures, canvas) = state
+      let (scene, player, textures, canvas, nextLevel) = state
       let (walls, floors, sprites) = scene
 
       let (offset, scale, selection, floorTex) = uiState
@@ -32,8 +32,8 @@ editorView view state uiState window = drawing
 
       drawCells True offset scale (fromIntegral floorRows) (fromIntegral floorCols) floor' floorTex 0
       drawCells False offset scale (fromIntegral wallRows) (fromIntegral wallCols) wall wallTex 0
-      drawSprites offset scale sprites spriteTex
       drawGrid offset scale (fromIntegral wallRows) (fromIntegral wallCols)
+      drawSprites offset scale sprites spriteTex
       drawSelection selection scale offset (fromIntegral wallRows) (fromIntegral wallCols)
 
       isRDown <- isMouseButtonDown MouseButtonRight
@@ -62,7 +62,7 @@ editorView view state uiState window = drawing
       if isSDown then saveLevel state "uh" else return ()
 
       let newScene = (newWalls, floors, sprites)
-      let newState = (newScene, player, textures, canvas)
+      let newState = (newScene, player, textures, canvas, nextLevel)
       let newUiState = (newOffset, newScale, newSelection, floorTex)
 
       return (newView, newState, newUiState, window)
