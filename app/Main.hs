@@ -78,7 +78,7 @@ gameView view state uiState window = drawing
         drawText ("FPS: " ++ show fps) 30 40 30 red
 
         if isPDown then enableCursor else return ()
-        let newView = (checkNextLevel position walls nextLevel) $ if isPDown && view == 2 then 3 else view
+        let newView = if (keyCount == keys) then view else (checkNextLevel position walls nextLevel) $ if isPDown && view == 2 then 3 else view
 
         return (newView, ((walls, floors, newSprites), (position, velocity, angle), textures, canvas, nextLevel, keys), uiState, window)
     )
