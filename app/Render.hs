@@ -17,6 +17,7 @@ import qualified Data.Word as W
 import qualified Foreign.ForeignPtr as P
 import qualified Foreign.Ptr as PP
 import Data.List
+import Data.Bits
 
 import Constants
 import Raystep
@@ -68,9 +69,9 @@ drawBars scene origin left right angle screenX textures
 drawFloor :: Vector2 -> Float -> Floors -> FloorTextures -> FloorCanvas -> IO ()
 drawFloor position angle floors floorTex floorCanvas = do 
 
-  let (leftPos, rightPos) = createPosArrays position angle
+  let (leftPos, rightPos, c) = createPosArrays position angle
   
-  let fun              = fn floors floorTex leftPos rightPos
+  let fun              = fn floors floorTex leftPos rightPos c
   let a                = VS.generate (texW*texH) fun
   let (p, offset, len) = VS.unsafeToForeignPtr a
   let vp               = P.castForeignPtr p :: P.ForeignPtr ()
@@ -86,21 +87,22 @@ drawFloor position angle floors floorTex floorCanvas = do
 
 type FloorPos = VS.Vector Vector2
 
-fn :: Floors -> FloorTextures -> FloorPos -> FloorPos -> Int -> W.Word32
-fn floors floorTextures leftPos rightPos i 
-  | 0 == 0 = (VS.!) floorTex (tx + ty*512)
+fn :: Floors -> FloorTextures -> FloorPos -> FloorPos -> (VS.Vector W.Word32) -> Int -> W.Word32
+fn floors floorTextures leftPos rightPos c i 
+  | 0 == 0 = ci .&. (VS.!) floorTex (tx + ty*(floor $ textureSize))
   | otherwise = 4278295360
   where x        = mod i texW
         y        = div i texW
-        tx       = mod wx 256
-        ty       = mod wy 256
-        wx       = floor $ vector2'x pos*256
-        wy       = floor $ vector2'y pos*256
+        tx       = mod wx (floor textureSize)
+        ty       = mod wy (floor textureSize)
+        wx       = floor $ vector2'x pos*(textureSize)
+        wy       = floor $ vector2'y pos*(textureSize)
         leftV    = leftPos VS.! y
         rightV   = rightPos VS.! y
         pos      = vectorLerp leftV rightV ( fromIntegral x/fromIntegral texW )
         floorTex = floorTextures !! id'
         id'      = getFloorID floors (floor $ vector2'y pos) (floor $ vector2'x pos)
+        ci       = c VS.! y
 
 getFloorID :: Floors -> Int -> Int -> Int
 getFloorID (cols, rows, floors) y x 
@@ -108,14 +110,17 @@ getFloorID (cols, rows, floors) y x
   | y >= cols || x >= rows = 0
   | otherwise = floors V.! (rows*y + x) 
 
-createPosArrays :: Vector2 -> Float -> (FloorPos, FloorPos)
+createPosArrays :: Vector2 -> Float -> (FloorPos, FloorPos, (VS.Vector W.Word32))
 createPosArrays position angle = tLtV $ distToEnds $ map ((*fovScaling) . yToDist) [0..texH]
   where leftV            = vector2Rotate (Vector2 1.0 0.0) (-(fov/2)+angle)
         rightV           = vector2Rotate (Vector2 1.0 0.0) ( (fov/2)+angle)
         distToEndsL dist = position + leftV|*dist
         distToEndsR dist = position + rightV|*dist
-        distToEnds distL = (map distToEndsL distL, map distToEndsR distL)
-        tLtV (l, r)      = (VS.fromList l, VS.fromList r)
+        distToEnds distL = (map distToEndsL distL, map distToEndsR distL, map c distL)
+        tLtV (l, r, c)   = (VS.fromList l, VS.fromList r, VS.fromList c)
+        c distance       = f $ floor $ t $ min ((20/distance)^2) 1 :: W.Word32
+        t x              = x*255
+        f y              = (y*256*256*256) + 16777215
 
 fovScaling = 1/ cos (fov/2)
 
