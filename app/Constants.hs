@@ -12,9 +12,9 @@ import qualified Data.Vector.Storable as VS
 import qualified Data.Word as W
 
 width :: Int 
-width  = div sWidth 2
+width  = div sWidth 3
 height :: Int
-height = div sHeight 2
+height = div sHeight 3
 
 sWidth :: Int
 sWidth = 1600
@@ -39,10 +39,10 @@ collisionDistance :: Float
 collisionDistance = 0.05
 
 acceleration :: Float
-acceleration = 0.15 -- in blocks per sec
+acceleration = 30.0 -- in blocks per sec
 
 deceleration :: Float
-deceleration = 0.02 -- in blocks per sec
+deceleration = 10.02 -- in blocks per sec
 
 maxSpeed :: Float
 maxSpeed = 5.0 -- in blocks per sec

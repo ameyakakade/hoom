@@ -15,6 +15,7 @@ assets/wall2.png
 assets/barrela.png
 assets/pillara.png
 +
+assets/music1.mp3
 assets/wow.wav
 assets/step1.wav
 assets/step2.wav

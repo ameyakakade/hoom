@@ -6,7 +6,7 @@ module Main where
 import Raylib.Core (initWindow, setTargetFPS ,getFPS, windowShouldClose, enableCursor
                    ,closeWindow ,getMouseDelta, isKeyDown, isKeyPressed ,disableCursor
                    ,getFrameTime, getRenderWidth,)
-import Raylib.Core.Audio (initAudioDevice, playSound)
+import Raylib.Core.Audio (initAudioDevice, playSound, stopSound)
 import Raylib.Core.Text (drawText)
 import Raylib.Core.Textures (loadTexture, loadImage, loadRenderTexture)
 import Raylib.Util (drawing, raylibApplication, WindowResources)
@@ -69,21 +69,22 @@ gameView view state uiState window = drawing
 
         -- add acceleration and deceleration
         let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) angle
-        let velocity    = updateVelocity velocityOld velocityDir positionOld walls
+        let velocity    = updateVelocity time velocityOld velocityDir positionOld walls
         let position    = positionOld |+| (velocity |* time) -- setTargetFPS 60
 
         let checkStep = stepOld > 2.0
-        if checkStep then ( if stepState then playSound (audio !! 1) else playSound (audio !! 2) )else return ()
+        if checkStep then ( if stepState then playSound (audio !! 2) else playSound (audio !! 3) )else return ()
         let step = if checkStep then 0 else (magnitude $ velocity |* time) + stepOld
         let newStepState = if checkStep then (not stepState) else stepState
 
         if isMDown then drawMap scene position angle else drawScene scene position angle textures canvas
 
         let (newSprites, keyCount, changed) = updateSprites sprites position
-        if changed then (playSound (head audio)) else return ()
+        if changed then (playSound (audio !! 1)) else return ()
 
         fps <- getFPS
         drawText ("FPS: " ++ show fps) 30 40 30 red
+        drawText ("Velocity: " ++ show (magnitude velocity)) 30 80 30 red
 
         if isPDown then enableCursor else return ()
         let newView = if (keyCount == keys) then view else (checkNextLevel position walls nextLevel) $ if isPDown && view == 2 then 3 else view
@@ -107,7 +108,13 @@ startView view state uiState window = drawing
       let newView = if editor then 3 else if startGame then 1 else 0
       if startGame then disableCursor else return ()
 
+      let (_, _, _, _, _, _, oldSound) = state
+      stopSound $ oldSound !! 0
+
       (newState, newUiState) <- if startGame then (load "levels/level1.txt") else return (state, uiState)
+
+      let (_, _, _, _, _, _, sound) = newState
+      playSound $ sound !! 0
 
       return (newView, newState, newUiState, window)
   )
