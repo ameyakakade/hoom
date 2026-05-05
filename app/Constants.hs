@@ -12,9 +12,9 @@ import qualified Data.Vector.Storable as VS
 import qualified Data.Word as W
 
 width :: Int 
-width  = div sWidth 3
+width  = div sWidth 2
 height :: Int
-height = div sHeight 3
+height = div sHeight 2
 
 sWidth :: Int
 sWidth = 1600
@@ -33,7 +33,7 @@ heightFactor :: Float
 heightFactor = 1
 
 textureSize :: Float
-textureSize = 64
+textureSize = 128
 
 collisionDistance :: Float
 collisionDistance = 0.05

@@ -35,7 +35,7 @@ startup = do
   window <- initWindow sWidth sHeight "Hoom"
   initAudioDevice
   (state, uiState) <- load "levels/level1.txt"
-  return (0, state, uiState, window)
+  return (3, state, uiState, window)
 
 boolToNum :: (Num a) => Bool -> a
 boolToNum b = if b then 1 else 0
@@ -79,7 +79,7 @@ gameView view state uiState window = drawing
 
         if isMDown then drawMap scene position angle else drawScene scene position angle textures canvas
 
-        let (newSprites, keyCount, changed) = updateSprites sprites position
+        let (newSprites, keyCount, changed) = updateSprites sprites position view
         if changed then (playSound (audio !! 1)) else return ()
 
         fps <- getFPS
@@ -87,13 +87,14 @@ gameView view state uiState window = drawing
         drawText ("Velocity: " ++ show (magnitude velocity)) 30 80 30 red
 
         if isPDown then enableCursor else return ()
-        let newView = if (keyCount == keys) then view else (checkNextLevel position walls nextLevel) $ if isPDown && view == 2 then 3 else view
+        let a = if isPDown && view == 2 then 3 else view
+        let newView = if (keyCount == keys) then a else (checkNextLevel position walls nextLevel) a
 
         return (newView, ((walls, floors, newSprites), (position, velocity, angle, step, newStepState), textures, canvas, nextLevel, keys, audio), uiState, window)
     )
 
-updateSprites :: StaticSprites -> Vector2 -> (StaticSprites, Int, Bool)
-updateSprites sprites position = (newSprites, count, changed)
+updateSprites :: StaticSprites -> Vector2 -> Int ->  (StaticSprites, Int, Bool)
+updateSprites sprites position view = if (view==1) then (newSprites, count, changed) else (sprites, 0, False)
   where fn (id, spritePosition) = (id /= 0) || ( 0.3 <= (vectorDistance spritePosition position))
         newSprites = filter fn sprites
         count = length $ filter (\(x, _) -> x == 0) newSprites
