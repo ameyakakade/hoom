@@ -2,18 +2,18 @@
 2.0 2.0
 0.0
 $
-assets/sky.png
-assets/pics/bluestone.png
-assets/pics/colorstone.png
-assets/pics/mossy.png
-assets/pics/redbrick.png
+assets/goodsky.png
+assets/Bricks/Brick 21 - 128x128.png
+assets/Bricks/Brick 22 - 128x128.png
+assets/Bricks/Brick 23 - 128x128.png
+assets/Bricks/Brick 24 - 128x128.png
 +
-assets/Ground.png
-assets/wall2.png
-assets/wall2.png
+assets/Tile/Tile_2.png
+assets/Tile/Tile_3.png
+assets/Tile/Tile_11.png
 +
-assets/barrela.png
-assets/pillara.png
+assets/tree.png
+assets/tree-2.png
 +
 assets/music1.mp3
 assets/wow.wav

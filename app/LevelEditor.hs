@@ -126,7 +126,7 @@ drawRows scale xOff yOff rows colWidth
 
 updateSelection :: Float -> Selection -> Bool -> Bool -> Bool -> Vector2 -> Vector2 -> Selection
 updateSelection scale oldSel clearSel pressed released mousePos offset
-  | clearSel  = None
+  | clearSel  = Selection {start = Vector2 0.0 0.0, cells = []}
   | pressed   = Selection {start = mousePos, cells = cells oldSel}
   | released  = Selection {start = Vector2 0.0 0.0 , cells = updateCells scale ((start oldSel) - offset) (mousePos - offset) (cells oldSel) }
   | otherwise = oldSel
@@ -141,15 +141,12 @@ updateCells scale start end oldCells = nub $ newCells ++ oldCells
     ey = floor $ vector2'y end / (blockSize*scale + padding)
 
 drawSelection :: Selection -> Float -> Vector2 -> Float -> Float -> IO ()
-drawSelection selection scale offset rows cols
-  | selection == None = return ()
-  | otherwise = do
+drawSelection selection scale offset rows cols = do
   let cell = cells selection
   let xOff = vector2'x offset
   let yOff = vector2'y offset
-  let fn (x, y) = drawRectangleRec (Rectangle (xOff + fromIntegral x*blockSize*scale + fromIntegral x*padding) (yOff + fromIntegral y*blockSize*scale + fromIntegral y*padding) (blockSize*scale + padding*2) (blockSize*scale + padding*2) ) (Color 200 200 200 100)
+  let fn (x, y) = drawRectangleRec (Rectangle (xOff + fromIntegral x*blockSize*scale + fromIntegral x*padding) (yOff + fromIntegral y*blockSize*scale + fromIntegral y*padding) (blockSize*scale + padding*2) (blockSize*scale + padding*2) ) (Color 100 100 100 100)
   mapM_ fn cell
-  | otherwise = return ()
 
 drawCells :: Bool -> Vector2 -> Float -> Float -> Float -> V.Vector Int -> [Texture] -> Int -> IO ()
 drawCells floorFlag offset scale rows cols scene textures index
@@ -180,7 +177,8 @@ drawSprites offset scale sprites textures = mapM_ fn sprites
         offY = vector2'y offset
 
 replaceCells :: (Int, Int, V.Vector Int) -> Int -> Selection -> (Int, Int, V.Vector Int)
-replaceCells (rows, cols, scene) id selection = (rows, cols, replaceByIndex scene 0 newCells id)
+replaceCells (rows, cols, scene) id selection 
+  | otherwise = (rows, cols, replaceByIndex scene 0 newCells id)
   where newCells = sort $ map (\(x, y) -> x + cols*y) $ cells selection
 
 replaceByIndex :: V.Vector Int -> Int -> [Int] -> Int -> V.Vector Int

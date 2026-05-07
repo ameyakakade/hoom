@@ -35,7 +35,7 @@ startup = do
   window <- initWindow sWidth sHeight "Hoom"
   initAudioDevice
   (state, uiState) <- load "levels/level1.txt"
-  return (3, state, uiState, window)
+  return (0, state, uiState, window)
 
 boolToNum :: (Num a) => Bool -> a
 boolToNum b = if b then 1 else 0

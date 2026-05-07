@@ -67,9 +67,9 @@ type Scene         = (Walls, Floors, StaticSprites)
 
 type NextLevel = (Int, FilePath)
 
-data Selection = None | Selection { start :: Vector2
-                                  , cells :: [(Int, Int)]
-                                  } deriving (Eq)
+data Selection = Selection { start :: Vector2
+                           , cells :: [(Int, Int)]
+                           } deriving (Eq)
          -- max keys
 type Keys = Int
 
