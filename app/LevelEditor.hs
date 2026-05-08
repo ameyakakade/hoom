@@ -68,15 +68,16 @@ editorView view state uiState window = drawing
       is9 <- isKeyDown KeyNine
       is0 <- isKeyDown KeyZero
 
-      let selectedId = if is1 then 1
-                       else if is2 then 2
-                            else if is3 then 3
-                                 else if is4 then 4
-                                      else if is5 then 5
-                                           else if is6 then 6
-                                                else if is7 then 7
-                                                     else if is8 then 8
-                                                          else if is9 then 9 else 0
+      let selectedId | is1 = 1
+                     | is2 = 2
+                     | is3 = 3
+                     | is4 = 4
+                     | is5 = 5
+                     | is6 = 6
+                     | is7 = 7
+                     | is8 = 8
+                     | is9 = 9
+                     | otherwise = 0
 
       isADown <- isKeyPressed KeyA
       let newWalls = if isADown then replaceCells walls selectedId selection else walls
@@ -128,7 +129,7 @@ updateSelection :: Float -> Selection -> Bool -> Bool -> Bool -> Vector2 -> Vect
 updateSelection scale oldSel clearSel pressed released mousePos offset
   | clearSel  = Selection {start = Vector2 0.0 0.0, cells = []}
   | pressed   = Selection {start = mousePos, cells = cells oldSel}
-  | released  = Selection {start = Vector2 0.0 0.0 , cells = updateCells scale ((start oldSel) - offset) (mousePos - offset) (cells oldSel) }
+  | released  = Selection {start = Vector2 0.0 0.0 , cells = updateCells scale (start oldSel - offset) (mousePos - offset) (cells oldSel) }
   | otherwise = oldSel
 
 updateCells :: Float -> Vector2 -> Vector2 -> [(Int, Int)] -> [(Int, Int)]
@@ -155,11 +156,11 @@ drawCells floorFlag offset scale rows cols scene textures index
       let id = V.head scene
       let textureRect = Rectangle 0 0 textureSize textureSize
       let x = fromIntegral $ mod index (floor cols)
-      let y = fromIntegral $ floor $ (fromIntegral index / cols)
+      let y = fromIntegral $ floor (fromIntegral index / cols)
       let offX = vector2'x offset
       let offY = vector2'y offset
       let drawingRect = Rectangle (offX + blockSize*x*scale + padding*x + padding) (offY + blockSize*y*scale + padding*y + padding) (blockSize*scale) (blockSize*scale)
-      if (floorFlag || id /= 0) then
+      if floorFlag || id /= 0 then
         drawTexturePro (textures!!id) textureRect drawingRect (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
         else return ()
       drawCells floorFlag offset scale rows cols (V.tail scene) textures (index+1)
@@ -169,8 +170,8 @@ drawSprites offset scale sprites textures = mapM_ fn sprites
   where fn (id, v2) = drawTexturePro
                       (textures!!id)
                       (Rectangle 0 0 textureSize textureSize)
-                      (Rectangle (offX + (vector2'x v2)*(blockSize*scale + padding))
-                       (offY + (vector2'y v2)*(blockSize*scale + padding))
+                      (Rectangle (offX + vector2'x v2*(blockSize*scale + padding))
+                       (offY + vector2'y v2*(blockSize*scale + padding))
                         (blockSize*scale) (blockSize*scale))
                       (Vector2 0.0 0.0) 0.0 (Color 255 255 255 255)
         offX = vector2'x offset
@@ -187,6 +188,6 @@ replaceByIndex list index indexList value
   | list == V.empty = V.empty
   | otherwise = if index == head indexList
                 then value `V.cons` replaceByIndex (V.tail list) (index+1) (tail indexList) value
-                else (V.head list) `V.cons` replaceByIndex (V.tail list) (index+1) (indexList) value
+                else V.head list `V.cons` replaceByIndex (V.tail list) (index+1) indexList value
 
 

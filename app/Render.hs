@@ -87,16 +87,16 @@ drawFloor position angle floors floorTex floorCanvas = do
 
 type FloorPos = VS.Vector Vector2
 
-fn :: Floors -> FloorTextures -> FloorPos -> FloorPos -> (VS.Vector W.Word32) -> Int -> W.Word32
+fn :: Floors -> FloorTextures -> FloorPos -> FloorPos -> VS.Vector W.Word32 -> Int -> W.Word32
 fn floors floorTextures leftPos rightPos c i 
-  | 0 == 0 = ci .&. (VS.!) floorTex (tx + ty*(floor $ textureSize))
+  | 0 == 0 = ci .&. (VS.!) floorTex (tx + ty*floor textureSize)
   | otherwise = 4278295360
   where x        = mod i texW
         y        = div i texW
         tx       = mod wx (floor textureSize)
         ty       = mod wy (floor textureSize)
-        wx       = floor $ vector2'x pos*(textureSize)
-        wy       = floor $ vector2'y pos*(textureSize)
+        wx       = floor $ vector2'x pos*textureSize
+        wy       = floor $ vector2'y pos*textureSize
         leftV    = leftPos VS.! y
         rightV   = rightPos VS.! y
         pos      = vectorLerp leftV rightV ( fromIntegral x/fromIntegral texW )
@@ -110,7 +110,7 @@ getFloorID (cols, rows, floors) y x
   | y >= cols || x >= rows = 0
   | otherwise = floors V.! (rows*y + x) 
 
-createPosArrays :: Vector2 -> Float -> (FloorPos, FloorPos, (VS.Vector W.Word32))
+createPosArrays :: Vector2 -> Float -> (FloorPos, FloorPos, VS.Vector W.Word32)
 createPosArrays position angle = tLtV $ distToEnds $ map ((*fovScaling) . yToDist) [0..texH]
   where leftV            = vector2Rotate (Vector2 1.0 0.0) (-(fov/2)+angle)
         rightV           = vector2Rotate (Vector2 1.0 0.0) ( (fov/2)+angle)

@@ -74,13 +74,13 @@ gameView view state uiState window = drawing
 
         let checkStep = stepOld > 2.0
         if checkStep then ( if stepState then playSound (audio !! 2) else playSound (audio !! 3) )else return ()
-        let step = if checkStep then 0 else (magnitude $ velocity |* time) + stepOld
-        let newStepState = if checkStep then (not stepState) else stepState
+        let step = if checkStep then 0 else magnitude (velocity |* time) + stepOld
+        let newStepState = if checkStep then not stepState else stepState
 
         if isMDown then drawMap scene position angle else drawScene scene position angle textures canvas
 
         let (newSprites, keyCount, changed) = updateSprites sprites position view
-        if changed then (playSound (audio !! 1)) else return ()
+        if changed then playSound (audio !! 1) else return ()
 
         fps <- getFPS
         drawText ("FPS: " ++ show fps) 30 40 30 red
@@ -88,17 +88,17 @@ gameView view state uiState window = drawing
 
         if isPDown then enableCursor else return ()
         let a = if isPDown && view == 2 then 3 else view
-        let newView = if (keyCount == keys) then a else (checkNextLevel position walls nextLevel) a
+        let newView = if keyCount == keys then a else checkNextLevel position walls nextLevel a
 
         return (newView, ((walls, floors, newSprites), (position, velocity, angle, step, newStepState), textures, canvas, nextLevel, keys, audio), uiState, window)
     )
 
 updateSprites :: StaticSprites -> Vector2 -> Int ->  (StaticSprites, Int, Bool)
-updateSprites sprites position view = if (view==1) then (newSprites, count, changed) else (sprites, 0, False)
-  where fn (id, spritePosition) = (id /= 0) || ( 0.3 <= (vectorDistance spritePosition position))
+updateSprites sprites position view = if view==1 then (newSprites, count, changed) else (sprites, 0, False)
+  where fn (id, spritePosition) = (id /= 0) || ( 0.3 <= vectorDistance spritePosition position)
         newSprites = filter fn sprites
         count = length $ filter (\(x, _) -> x == 0) newSprites
-        changed = (length $ sprites) /= (length $ newSprites)
+        changed = length sprites /= length newSprites
 
 startView view state uiState window = drawing
   ( do
@@ -106,13 +106,16 @@ startView view state uiState window = drawing
       let buttonWidth = 100
       startGame <- guiButton (Rectangle ((width/2) - (buttonWidth/2)) 100 buttonWidth 30) $ Just "Start Game" 
       editor <- isKeyPressed KeyE
-      let newView = if editor then 3 else if startGame then 1 else 0
+      let newView
+            | editor = 3
+            | startGame = 1
+            | otherwise = 0
       if startGame then disableCursor else return ()
 
       let (_, _, _, _, _, _, oldSound) = state
       stopSound $ oldSound !! 0
 
-      (newState, newUiState) <- if startGame then (load "levels/level1.txt") else return (state, uiState)
+      (newState, newUiState) <- if startGame then load "levels/level1.txt" else return (state, uiState)
 
       let (_, _, _, _, _, _, sound) = newState
       playSound $ sound !! 0
@@ -128,7 +131,7 @@ changeLevel view state uiState window = do
   return (1, newState, newUiState, window)
 
 checkNextLevel :: Vector2 -> Walls -> NextLevel -> Int -> Int
-checkNextLevel position (_, cols, _) (index, _) currView = if (currView == 1 && (index == ((floor $ vector2'y position)*cols + (floor $ vector2'x position)) ) ) then 4 else currView
+checkNextLevel position (_, cols, _) (index, _) currView = if currView == 1 && (index == (floor (vector2'y position)*cols + floor (vector2'x position)) ) then 4 else currView
 
 shouldClose :: AppState -> IO Bool
 shouldClose _ = windowShouldClose

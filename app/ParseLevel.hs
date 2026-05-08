@@ -56,7 +56,7 @@ parseLevel input = ((Vector2 ppx ppy, Vector2 pvx pvy, angle, 0, False), (walls,
   where larr = lines input
         [playerData, paths, nextLevelData, wallData, floorData, spriteData] = splitOn "$" larr
 
-        nextLevel = ((read $ head nextLevelData), (nextLevelData !! 1) )
+        nextLevel = (read $ head nextLevelData, nextLevelData !! 1 )
 
         wall     = V.fromList wallsTemp
         wallsTemp :: [Int]
@@ -104,17 +104,17 @@ saveLevel state filePath = do
   let floorText = getTextBlock floors
 
   let level = unlines $
-       [ (vec2ToText position),
-         (vec2ToText velocity),
+       [ vec2ToText position,
+         vec2ToText velocity,
          show angle
        ] ++ ["$"] ++
        wallPaths ++ ["+"] ++
        floorPaths ++ ["+"] ++
        spritePaths ++ ["+"] ++
        audioPaths ++ ["$"] ++
-       (getTextBlock walls) ++ ["$"] ++
-       (getTextBlock floors) ++ ["$"] ++
-       (map (\(x, v2)-> (show x ++ " " ++ (vec2ToText v2))) staticSprites)
+       getTextBlock walls ++ ["$"] ++
+       getTextBlock floors ++ ["$"] ++
+       map (\(x, v2)-> show x ++ " " ++ (vec2ToText v2)) staticSprites
 
   writeFile filePath level
        
@@ -131,4 +131,4 @@ chunks n xs =
     in  ys : chunks n zs
 
 vec2ToText :: Vector2 -> String
-vec2ToText vec = (show $ vector2'x vec) ++ " " ++ (show $ vector2'y vec)
+vec2ToText vec = show (vector2'x vec) ++ " " ++ show (vector2'y vec)
