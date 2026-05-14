@@ -1,6 +1,6 @@
 module Constants (width, height, cellSize, planeEnds, textureSize, sWidth, sHeight
                  ,collisionDistance, acceleration, heightFactor
-                 ,deceleration, maxSpeed, fov, Textures, State, UIState, Canvas, FloorCanvas
+                 ,deceleration, fov, Textures, State, UIState, Canvas, FloorCanvas
                  ,Walls, Floors, StaticSprites, WallTextures, FloorTextures, SpriteTextures
                  ,AppState, Scene, Player, FloorTex, Selection(..), NextLevel, Keys) where
 
@@ -43,9 +43,6 @@ acceleration = 30.0 -- in blocks per sec
 
 deceleration :: Float
 deceleration = 10.02 -- in blocks per sec
-
-maxSpeed :: Float
-maxSpeed = 5.0 -- in blocks per sec
 
 type FloorTex       = VS.Vector W.Word32
 type WallTextures   = [Texture]

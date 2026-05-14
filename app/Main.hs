@@ -25,6 +25,7 @@ import Data.Bits
 
 import Constants
 import Minimap
+
 import Render
 import Movement
 import ParseLevel
@@ -65,11 +66,14 @@ gameView view state uiState window = drawing
         time <- getFrameTime
       
         mouse <- fmap vector2'x getMouseDelta 
-        let angle = angleOld + mouse*0.003
+        isJDown <- fmap ((*(-1)).boolToNum) (isKeyDown KeyJ)
+        isKDown <- fmap boolToNum (isKeyDown KeyK)
+        let angle = angleOld + mouse*0.003 + 1*(isJDown + isKDown)*time
 
         -- add acceleration and deceleration
+        maxSpeed <- fmap (\b -> if b then 7 else 5) (isKeyDown KeyLeftShift)
         let velocityDir = vector2Rotate (Vector2 (xOffset1 + xOffset2) (yOffset1 + yOffset2) ) angle
-        let velocity    = updateVelocity time velocityOld velocityDir positionOld walls
+        let velocity    = updateVelocity time maxSpeed velocityOld velocityDir positionOld walls
         let position    = positionOld |+| (velocity |* time) -- setTargetFPS 60
 
         let checkStep = stepOld > 2.0
@@ -89,6 +93,7 @@ gameView view state uiState window = drawing
         if isPDown then enableCursor else return ()
         let a = if isPDown && view == 2 then 3 else view
         let newView = if keyCount == keys then a else checkNextLevel position walls nextLevel a
+
 
         return (newView, ((walls, floors, newSprites), (position, velocity, angle, step, newStepState), textures, canvas, nextLevel, keys, audio), uiState, window)
     )

@@ -7,8 +7,8 @@ import Raylib.Types (Vector2, pattern Vector2, vector2'x, vector2'y)
 import Constants
 import Raystep(getWallIDVec2)
 
-updateVelocity :: Float ->Vector2 -> Vector2 -> Vector2 -> Walls -> Vector2
-updateVelocity time velocityOld velocityDir positionOld scene
+updateVelocity :: Float -> Float -> Vector2 -> Vector2 -> Vector2 -> Walls -> Vector2
+updateVelocity time maxSpeed velocityOld velocityDir positionOld scene
   | magnitude velocity > 0.1 || (magnitude velocityDir > 0) = velocity
   | otherwise = Vector2 0.0 0.0
   where velocityDelta     = (vectorNormalize velocityDir |* (acceleration*time)) |-| (vectorNormalize velocityOld |* (deceleration*time) )
